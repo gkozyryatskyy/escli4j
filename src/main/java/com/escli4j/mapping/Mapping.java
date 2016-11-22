@@ -7,7 +7,6 @@ import java.util.Set;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +27,12 @@ public class Mapping {
     static {
         Reflections reflections;
         String escliPackage = System.getProperty(StaticProps.PACKAGE);
-        System.out.println("start"); // TODO
         if (escliPackage != null) {
             reflections = new Reflections(escliPackage);
         } else {
             reflections = new Reflections();
         }
+
         Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Type.class);
         for (Class<?> clazz : classes) {
             // check inheritance
@@ -54,7 +53,6 @@ public class Mapping {
                 throw new IllegalStateException("THere is duplicate model classes " + prev + " and " + clazz);
             }
         }
-        System.out.println("end"); // TODO
     }
 
     protected final Client client;
@@ -85,16 +83,7 @@ public class Mapping {
 
     protected boolean createIndex(String index, Map<String, Class<? extends EsEntity>> typesMap) {
         CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index);
-        typesMap.forEach((k, v) -> {
-            XContentBuilder b = MappingUtils.getMappingBuilder(k, v);
-            try {
-                System.out.println(b.prettyPrint().string()); // TODO
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            builder.addMapping(k, b);
-        });
+        typesMap.forEach((k, v) -> builder.addMapping(k, MappingUtils.getMappingBuilder(k, v)));
         return builder.get().isAcknowledged();
     }
 
