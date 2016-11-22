@@ -1,0 +1,88 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<groupId>com.escli4j</groupId>
+	<artifactId>escli4j</artifactId>
+	<!-- x.y.z where x.y is elasticsearch client version and z is escli4j version-->	
+	<version>5.0.1</version>
+	<name>datum</name>
+
+	<description>
+        Elacticsearch client with async support and meta classes generation 
+    </description>
+
+	<developers>
+		<developer>
+			<id>gkozyryatskyy</id>
+			<name>Gleb Kozyryatskyy</name>
+			<email>g.kozyryatskyy@gmail.com</email>
+		</developer>
+	</developers>
+
+	<properties>
+		<jar.main.class>com.escli4j.Main</jar.main.class>
+		
+		<java.version>1.8</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		
+		<eclipse-plugin.version>2.10</eclipse-plugin.version>
+		
+        <log4j.version>2.7</log4j.version>
+        <jackson.version>2.7.6</jackson.version>
+        <reflections.version>0.9.10</reflections.version>
+        <es.version>5.0.0</es.version>
+        
+	</properties>
+
+	<build>
+		<defaultGoal>install</defaultGoal>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>${eclipse-plugin.version}</version>
+				<configuration>
+					<downloadSources>true</downloadSources>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<!-- logging -->
+		<dependency>
+    		<groupId>org.apache.logging.log4j</groupId>
+    		<artifactId>log4j-to-slf4j</artifactId>
+    		<version>${log4j.version}</version>
+		</dependency>
+		<!-- /logging -->	
+		
+		<!-- utils -->	
+		<dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+    		<artifactId>jackson-databind</artifactId>
+    		<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.reflections</groupId>
+    		<artifactId>reflections</artifactId>
+    		<version>${reflections.version}</version>
+		</dependency>
+		<!-- /utils -->	
+
+    	<dependency>
+    		<groupId>org.elasticsearch.client</groupId>
+    		<artifactId>transport</artifactId>
+    		<version>${es.version}</version>
+		</dependency>
+		
+		
+	</dependencies>
+</project>
