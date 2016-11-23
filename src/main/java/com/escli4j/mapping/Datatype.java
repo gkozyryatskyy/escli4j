@@ -1,4 +1,4 @@
-package com.escli4j;
+package com.escli4j.mapping;
 
 public enum Datatype {
 

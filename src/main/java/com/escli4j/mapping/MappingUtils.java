@@ -1,4 +1,4 @@
-package com.escli4j.util;
+package com.escli4j.mapping;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import com.escli4j.Datatype;
 
 public class MappingUtils {
 
@@ -29,14 +28,14 @@ public class MappingUtils {
         try {
             XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().startObject(type);
             contentBuilder.field("properties");
-            addPropertiesObject(contentBuilder, model);
+            buildPropertiesObject(contentBuilder, model);
             return contentBuilder.endObject().endObject();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private static void addObject(XContentBuilder contentBuilder, Datatype datatype, Class<?> model) {
+    private static void buildObject(XContentBuilder contentBuilder, Datatype datatype, Class<?> model) {
         if (Datatype.OBJECT != datatype && Datatype.NESTED != datatype) {
             throw new IllegalArgumentException(
                     "Method getObjectBuiler allowed just for " + Datatype.OBJECT + " or " + Datatype.NESTED);
@@ -44,14 +43,14 @@ public class MappingUtils {
         try {
             contentBuilder.startObject().field("type", datatype.name().toLowerCase());
             contentBuilder.field("properties");
-            addPropertiesObject(contentBuilder, model);
+            buildPropertiesObject(contentBuilder, model);
             contentBuilder.endObject();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private static void addPropertiesObject(XContentBuilder contentBuilder, Class<?> model) throws IOException {
+    private static void buildPropertiesObject(XContentBuilder contentBuilder, Class<?> model) throws IOException {
         contentBuilder.startObject();
         for (Field field : getAllAnnotatedFields(model, com.escli4j.annotations.Field.class)) {
             com.escli4j.annotations.Field fieldAnnotation = field.getAnnotation(com.escli4j.annotations.Field.class);
@@ -62,7 +61,7 @@ public class MappingUtils {
             } else if (Datatype.OBJECT == datatype || Datatype.NESTED == datatype) {
                 // add object properties
                 contentBuilder.field(name);
-                addObject(contentBuilder, datatype, field.getType());
+                buildObject(contentBuilder, datatype, field.getType());
             } else {
                 // add simple fields
                 contentBuilder.startObject(name).field("type", datatype.name().toLowerCase()).endObject();

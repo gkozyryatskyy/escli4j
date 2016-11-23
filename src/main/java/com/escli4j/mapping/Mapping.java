@@ -14,10 +14,8 @@ import org.slf4j.LoggerFactory;
 import com.escli4j.annotations.Type;
 import com.escli4j.model.EsChildEntity;
 import com.escli4j.model.EsEntity;
-import com.escli4j.util.MappingUtils;
 import com.escli4j.util.StaticProps;
 
-@SuppressWarnings("unchecked")
 public class Mapping {
 
     private static final Logger log = LoggerFactory.getLogger(Mapping.class);
@@ -48,6 +46,7 @@ public class Mapping {
                 model.put(typeAmmotation.index(), typesMap);
             }
             // fill types max
+            @SuppressWarnings("unchecked")
             Class<? extends EsEntity> prev = typesMap.put(typeAmmotation.type(), (Class<? extends EsEntity>) clazz);
             if (prev != null) {
                 throw new IllegalStateException("THere is duplicate model classes " + prev + " and " + clazz);
@@ -83,21 +82,31 @@ public class Mapping {
 
     protected boolean createIndex(String index, Map<String, Class<? extends EsEntity>> typesMap) {
         CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index);
-        typesMap.forEach((k, v) -> builder.addMapping(k, MappingUtils.getMappingBuilder(k, v)));
-        return builder.get().isAcknowledged();
+        boolean execute = false;
+        for (Map.Entry<String, Class<? extends EsEntity>> entry : typesMap.entrySet()) {
+            Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
+            if (typeAmmotation.create()) {
+                execute = true;
+                builder.addMapping(entry.getKey(), MappingUtils.getMappingBuilder(entry.getKey(), entry.getValue()));
+            }
+        }
+        // not send get request if execute == false
+        return execute && builder.get().isAcknowledged();
     }
 
     protected boolean updateIndex(String index, Map<String, Class<? extends EsEntity>> typesMap) {
+        boolean execute = false;
         boolean result = true;
         for (Map.Entry<String, Class<? extends EsEntity>> entry : typesMap.entrySet()) {
-            result &= updateType(index, entry.getKey(), entry.getValue());
+            Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
+            if (typeAmmotation.update()) {
+                execute = true;
+                result &= client.admin().indices().preparePutMapping(index).setType(entry.getKey())
+                        .setSource(MappingUtils.getMappingBuilder(entry.getKey(), entry.getValue())).get()
+                        .isAcknowledged();
+            }
         }
-        return result;
-    }
-
-    protected boolean updateType(String index, String type, Class<? extends EsEntity> model) {
-        return client.admin().indices().preparePutMapping(index).setType(type)
-                .setSource(MappingUtils.getMappingBuilder(type, model)).get().isAcknowledged();
+        return execute && result;
     }
 
 }

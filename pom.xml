@@ -31,7 +31,7 @@
         <log4j.version>2.7</log4j.version>
         <jackson.version>2.7.6</jackson.version>
         <reflections.version>0.9.10</reflections.version>
-        <es.version>5.0.0</es.version>
+        <es.version>5.0.1</es.version>
         
 	</properties>
 
@@ -82,7 +82,6 @@
     		<artifactId>transport</artifactId>
     		<version>${es.version}</version>
 		</dependency>
-		
 		
 	</dependencies>
 </project>

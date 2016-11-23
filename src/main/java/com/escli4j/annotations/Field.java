@@ -7,7 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.escli4j.Datatype;
+import com.escli4j.mapping.Datatype;
 
 @Inherited
 @Documented
