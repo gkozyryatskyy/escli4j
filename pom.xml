@@ -6,7 +6,7 @@
 	<artifactId>escli4j</artifactId>
 	<!-- x.y.z where x is escli4j version and y.z is elasticsearch client version -->	
 	<version>1.5.0</version>
-	<name>datum</name>
+	<name>anyclip</name>
 
 	<description>
         Elacticsearch client with async support and meta classes generation 
@@ -26,6 +26,7 @@
 		<java.version>1.8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		
+		<compiler-plugin.version>3.5.1</compiler-plugin.version>
 		<eclipse-plugin.version>2.10</eclipse-plugin.version>
 		
         <log4j.version>2.7</log4j.version>
@@ -43,8 +44,16 @@
 				<filtering>true</filtering>
 			</resource>
 		</resources>
-
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${compiler-plugin.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-eclipse-plugin</artifactId>
