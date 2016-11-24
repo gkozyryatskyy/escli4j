@@ -1,6 +1,6 @@
 package com.escli4j.mapping;
 
-public enum Datatype {
+public enum DataType {
 
     NONE, TEXT, KEYWORD, LONG, INTEGER, SHORT, BYTE, DOUBLE, FLOAT, DATE, BOOLEAN, BINARY, OBJECT, NESTED, GEO_POINT,
     GEO_SHAPE, IP, COMPLETION, TOKEN_COUNT, MURMUR3, ATTACHMENT;

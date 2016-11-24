@@ -13,14 +13,14 @@ import com.escli4j.mapping.DataType;
 @Documented
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Field{
+public @interface InnerField{
 
     /**
      * Data type of the field. Default is not send, elasticsearch will creates it dynamically
      * @return data type
      */
     DataType dataType() default DataType.NONE;
-    
+
     /**
      * doc_values parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/doc-values.html
      * @return data type
@@ -28,9 +28,9 @@ public @interface Field{
     boolean docValues() default true;
 
     /**
-     * fields parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html
+     * Name of the inner field. Default is not send, elasticsearch will creates it dynamically
      * @return data type
      */
-    InnerField[] fields() default {};
+    String name() default "";
 
 }

@@ -9,6 +9,8 @@ import java.util.List;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
+import com.escli4j.annotations.InnerField;
+
 public class MappingUtils {
 
     public static List<Field> getAllAnnotatedFields(Class<?> type, Class<? extends Annotation> annotation) {
@@ -35,10 +37,10 @@ public class MappingUtils {
         }
     }
 
-    private static void buildObject(XContentBuilder contentBuilder, Datatype datatype, Class<?> model) {
-        if (Datatype.OBJECT != datatype && Datatype.NESTED != datatype) {
+    private static void buildObject(XContentBuilder contentBuilder, DataType datatype, Class<?> model) {
+        if (DataType.OBJECT != datatype && DataType.NESTED != datatype) {
             throw new IllegalArgumentException(
-                    "Method getObjectBuiler allowed just for " + Datatype.OBJECT + " or " + Datatype.NESTED);
+                    "Method getObjectBuiler allowed just for " + DataType.OBJECT + " or " + DataType.NESTED);
         }
         try {
             contentBuilder.startObject().field("type", datatype.name().toLowerCase());
@@ -54,20 +56,46 @@ public class MappingUtils {
         contentBuilder.startObject();
         for (Field field : getAllAnnotatedFields(model, com.escli4j.annotations.Field.class)) {
             com.escli4j.annotations.Field fieldAnnotation = field.getAnnotation(com.escli4j.annotations.Field.class);
-            String name = field.getName();
-            Datatype datatype = fieldAnnotation.datatype();
-            if (Datatype.NONE == datatype) {
-                // skip
-            } else if (Datatype.OBJECT == datatype || Datatype.NESTED == datatype) {
-                // add object properties
-                contentBuilder.field(name);
-                buildObject(contentBuilder, datatype, field.getType());
-            } else {
-                // add simple fields
-                contentBuilder.startObject(name).field("type", datatype.name().toLowerCase()).endObject();
-            }
+
+            // ------------ process dataType -----------------
+            buildDataType(contentBuilder, field.getType(), fieldAnnotation.dataType(), field.getName());
+            // ------------ process docValues -----------------
+            buildDocValues(contentBuilder, fieldAnnotation.docValues());
+            // ------------ process fields -----------------
+            buildFields(contentBuilder, field.getType(), fieldAnnotation.fields());
         }
         contentBuilder.endObject();
+    }
+
+    private static void buildDataType(XContentBuilder contentBuilder, Class<?> javaType, DataType dataType, String name)
+            throws IOException {
+        if (DataType.NONE == dataType) {
+            // skip
+        } else if (DataType.OBJECT == dataType || DataType.NESTED == dataType) {
+            // add object properties
+            contentBuilder.field(name);
+            buildObject(contentBuilder, dataType, javaType);
+        } else {
+            // add simple fields
+            contentBuilder.startObject(name).field("type", dataType.name().toLowerCase()).endObject();
+        }
+    }
+
+    private static void buildDocValues(XContentBuilder contentBuilder, boolean docValues) throws IOException {
+        if (!docValues) {
+            contentBuilder.field("doc_values", false);
+        }
+    }
+
+    private static void buildFields(XContentBuilder contentBuilder, Class<?> javaType, InnerField[] innerFields)
+            throws IOException {
+        for (InnerField innerField : innerFields) {
+
+            // ------------ process dataType -----------------
+            buildDataType(contentBuilder, javaType, innerField.dataType(), innerField.name());
+            // ------------ process docValues -----------------
+            buildDocValues(contentBuilder, innerField.docValues());
+        }
     }
 
 }
