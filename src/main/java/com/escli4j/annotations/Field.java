@@ -17,6 +17,7 @@ public @interface Field{
 
     /**
      * Name of the field. Default is not send, elasticsearch will creates it dynamically
+     * @return data type
      */
     Datatype datatype() default Datatype.NONE;
 

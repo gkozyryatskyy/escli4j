@@ -15,21 +15,25 @@ public @interface Type {
 
     /**
      * Name of the elasticsearch index
+     * @return index name
      */
     String index();
 
     /**
      * Name of the elasticsearch type
+     * @return type name
      */
     String type();
     
     /**
      * Create index and type if not exist
+     * @return true if index should be created if not exists, false otherwise
      */
     boolean create() default true;
     
     /**
      * Update index and type if exist
+     * @return true if index should be updates if exists, false otherwise
      */
     boolean update() default false;
 

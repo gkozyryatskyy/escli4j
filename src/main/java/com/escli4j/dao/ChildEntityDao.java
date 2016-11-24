@@ -109,6 +109,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
+     * @param obj object to update
      * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
      * shards, so this number can be higher than the number of shards.
      */
@@ -117,6 +118,9 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
+     * @param obj object to update
+     * @param refresh refresh configuration
+     * @param docAsUpsert should this doc be upserted or not
      * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
      * shards, so this number can be higher than the number of shards.
      */
@@ -143,6 +147,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
+     * @param objs objects to update
      * @return new array of objects that was updated. Consider object updated when the total number of shards the write
      * succeeded on more than 0.
      */
@@ -151,6 +156,9 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
+     * @param objs objects to update
+     * @param refresh refresh configuration
+     * @param docAsUpsert should this doc be upserted or not
      * @return new array of objects that was updated. Consider object updated when the total number of shards the write
      * succeeded on more than 0.
      */
@@ -173,16 +181,22 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
-     * @return new array of objects that was updated. Consider object updated when the total number of shards the write
-     * succeeded on more than 0.
+     * Pass to function new array of objects that was updated. Consider object updated when the total number of shards
+     * the write succeeded on more than 0.
+     * @param objs objects to update
+     * @param function operation which will be called after update execution
      */
     public void asyncUpdate(List<T> objs, Consumer<List<T>> function) {
         asyncUpdate(objs, RefreshPolicy.NONE, true, function);
     }
 
     /**
-     * @return new array of objects that was updated. Consider object updated when the total number of shards the write
-     * succeeded on more than 0.
+     * Pass to function new array of objects that was updated. Consider object updated when the total number of shards
+     * the write succeeded on more than 0.
+     * @param objs objects to update
+     * @param refresh refresh configuration
+     * @param docAsUpsert should this doc be upserted or not
+     * @param function operation which will be called after update execution
      */
     public void asyncUpdate(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function) {
         if (objs.size() > 0) {
