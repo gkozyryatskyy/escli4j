@@ -4,8 +4,8 @@
 	
 	<groupId>com.escli4j</groupId>
 	<artifactId>escli4j</artifactId>
-	<!-- x.y.z where x.y is elasticsearch client version and z is escli4j version-->	
-	<version>5.0.1</version>
+	<!-- x.y.z where x is escli4j version and y.z is elasticsearch client version -->	
+	<version>1.5.0</version>
 	<name>datum</name>
 
 	<description>
