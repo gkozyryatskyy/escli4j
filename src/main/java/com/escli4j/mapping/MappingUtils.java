@@ -29,7 +29,6 @@ public class MappingUtils {
     public static XContentBuilder getMappingBuilder(String type, Class<?> model) {
         try {
             XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().startObject(type);
-            contentBuilder.field("properties");
             buildPropertiesObject(contentBuilder, model);
             return contentBuilder.endObject().endObject();
         } catch (IOException e) {
@@ -37,32 +36,32 @@ public class MappingUtils {
         }
     }
 
-    private static void buildObject(XContentBuilder contentBuilder, DataType datatype, Class<?> model) {
-        if (DataType.OBJECT != datatype && DataType.NESTED != datatype) {
-            throw new IllegalArgumentException(
-                    "Method getObjectBuiler allowed just for " + DataType.OBJECT + " or " + DataType.NESTED);
-        }
-        try {
-            contentBuilder.startObject().field("type", datatype.name().toLowerCase());
-            contentBuilder.field("properties");
-            buildPropertiesObject(contentBuilder, model);
-            contentBuilder.endObject();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
+    // private static void buildObject(XContentBuilder contentBuilder, DataType datatype, Class<?> model) {
+    // if (DataType.OBJECT != datatype && DataType.NESTED != datatype) {
+    // throw new IllegalArgumentException(
+    // "Method getObjectBuiler allowed just for " + DataType.OBJECT + " or " + DataType.NESTED);
+    // }
+    // try {
+    // contentBuilder.startObject().field("type", datatype.name().toLowerCase());
+    // buildPropertiesObject(contentBuilder, model);
+    // contentBuilder.endObject();
+    // } catch (IOException e) {
+    // throw new IllegalStateException(e);
+    // }
+    // }
 
     private static void buildPropertiesObject(XContentBuilder contentBuilder, Class<?> model) throws IOException {
-        contentBuilder.startObject();
+        contentBuilder.startObject("properties");
         for (Field field : getAllAnnotatedFields(model, com.escli4j.annotations.Field.class)) {
             com.escli4j.annotations.Field fieldAnnotation = field.getAnnotation(com.escli4j.annotations.Field.class);
-
+            contentBuilder.startObject(field.getName());
             // ------------ process dataType -----------------
             buildDataType(contentBuilder, field.getType(), fieldAnnotation.dataType(), field.getName());
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
             // ------------ process fields -----------------
             buildFields(contentBuilder, field.getType(), fieldAnnotation.fields());
+            contentBuilder.endObject();
         }
         contentBuilder.endObject();
     }
@@ -73,11 +72,12 @@ public class MappingUtils {
             // skip
         } else if (DataType.OBJECT == dataType || DataType.NESTED == dataType) {
             // add object properties
-            contentBuilder.field(name);
-            buildObject(contentBuilder, dataType, javaType);
+            contentBuilder.field("type", dataType.name().toLowerCase());
+            buildPropertiesObject(contentBuilder, javaType);
         } else {
             // add simple fields
-            contentBuilder.startObject(name).field("type", dataType.name().toLowerCase()).endObject();
+            // TODO
+            contentBuilder.field("type", dataType.name().toLowerCase());
         }
     }
 
@@ -89,12 +89,17 @@ public class MappingUtils {
 
     private static void buildFields(XContentBuilder contentBuilder, Class<?> javaType, InnerField[] innerFields)
             throws IOException {
-        for (InnerField innerField : innerFields) {
-
-            // ------------ process dataType -----------------
-            buildDataType(contentBuilder, javaType, innerField.dataType(), innerField.name());
-            // ------------ process docValues -----------------
-            buildDocValues(contentBuilder, innerField.docValues());
+        if (innerFields.length > 0) {
+            contentBuilder.startObject("fields");
+            for (InnerField innerField : innerFields) {
+                contentBuilder.startObject(innerField.name());
+                // ------------ process dataType -----------------
+                buildDataType(contentBuilder, javaType, innerField.dataType(), innerField.name());
+                // ------------ process docValues -----------------
+                buildDocValues(contentBuilder, innerField.docValues());
+                contentBuilder.endObject();
+            }
+            contentBuilder.endObject();
         }
     }
 
