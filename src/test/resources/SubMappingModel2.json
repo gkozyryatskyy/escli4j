@@ -1,0 +1,24 @@
+{
+   "test":{
+      "properties":{
+         "subField1":{
+            "type":"text"
+         },
+         "subField2":{
+            "type":"text"
+         },
+         "subField3":{
+            "type":"text"
+         },
+         "parrentField1":{
+            "type":"text"
+         },
+         "parrentField2":{
+            "type":"text"
+         },
+         "parrentField3":{
+            "type":"text"
+         }
+      }
+   }
+}

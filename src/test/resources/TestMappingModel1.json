@@ -1,0 +1,31 @@
+{
+   "test":{
+      "properties":{
+         "field1":{
+            "type":"text"
+         },
+         "field2":{
+            "type":"keyword"
+         },
+         "field3":{
+            "type":"object",
+            "properties":{
+               "field5":{
+                  "type":"text"
+               },
+               "field6":{
+                  "type":"keyword"
+               }
+            }
+         },
+         "field4":{
+            "type":"keyword",
+            "fields":{
+               "indexes":{
+                  "type":"text"
+               }
+            }
+         }
+      }
+   }
+}
