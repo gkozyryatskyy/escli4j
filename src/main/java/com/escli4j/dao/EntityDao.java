@@ -9,23 +9,19 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
-import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public abstract class EntityDao<T extends EsEntity> extends Dao {
+public class EntityDao<T extends EsEntity> extends Dao {
 
     protected final Class<T> clazz;
 
@@ -34,37 +30,40 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
         this.clazz = clazz;
     }
 
+    /**
+     * Check document existence by id
+     * @param id document id
+     * @return true if object exists
+     */
     public boolean isExist(String id) {
         return prepareGet(id).get().isExists();
     }
 
-    public void asyncExist(Consumer<Set<String>> function, String... ids) {
-        if (ids.length > 0) {
-            MultiGetRequestBuilder bulk = prepareMultiGet(ids);
-            bulk.execute(new AbstractActionListener<MultiGetResponse>() {
-
-                @Override
-                public void onResponse(MultiGetResponse response) {
-                    Set<String> retval = new HashSet<>(response.getResponses().length);
-                    for (MultiGetItemResponse item : response.getResponses()) {
-                        GetResponse resp = item.getResponse();
-                        if (resp.isExists()) {
-                            retval.add(resp.getId());
-                        }
-                    }
-                    function.accept(retval);
-                }
-
-            });
-        } else {
-            throw new IllegalArgumentException("Ids length must be > 0.");
-        }
+    /**
+     * Check documents array existence by ids
+     * @param ids documents ids
+     * @return Set of the unique existed ids
+     */
+    public Set<String> isExist(String... ids) {
+        return Arrays.stream(prepareMultiGet(ids).get().getResponses()).filter(r -> r.getResponse().isExists())
+                .map(r -> r.getResponse().getId()).collect(Collectors.toSet());
     }
 
+    /**
+     * Creates document
+     * @param obj document to create
+     * @return same object with id
+     */
     public T create(T obj) {
         return create(obj, RefreshPolicy.NONE);
     }
 
+    /**
+     * Creates document
+     * @param obj document to create
+     * @param refresh refresh index configuration
+     * @return same object with id
+     */
     public T create(T obj, RefreshPolicy refresh) {
         IndexResponse resp = prepareIndex(obj.getId()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
                 .setSource(JsonUtils.writeValueAsBytes(obj)).get();
@@ -72,27 +71,21 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
         return obj;
     }
 
-    public void asyncCreate(T obj, Consumer<T> function) {
-        asyncCreate(obj, RefreshPolicy.NONE, function);
-    }
-
-    public void asyncCreate(T obj, RefreshPolicy refresh, Consumer<T> function) {
-        prepareIndex(obj.getId()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
-                .setSource(JsonUtils.writeValueAsBytes(obj)).execute(new AbstractActionListener<IndexResponse>() {
-
-                    @Override
-                    public void onResponse(IndexResponse response) {
-                        obj.setId(response.getId());
-                        function.accept(obj);
-                    }
-
-                });
-    }
-
+    /**
+     * Creates documents
+     * @param objs documents to create
+     * @return same objects with ids
+     */
     public List<T> create(List<T> objs) {
         return create(objs, RefreshPolicy.NONE);
     }
 
+    /**
+     * Creates documents
+     * @param objs documents to create
+     * @param refresh refresh index configuration
+     * @return same objects with ids
+     */
     public List<T> create(List<T> objs, RefreshPolicy refresh) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
@@ -108,6 +101,11 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
         return objs;
     }
 
+    /**
+     * Get document
+     * @param id document id
+     * @return document with id
+     */
     public T get(String id) {
         GetResponse resp = prepareGet(id).get();
         if (resp.isExists()) {
@@ -119,23 +117,11 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
         }
     }
 
-    public void asyncGet(String id, Consumer<T> function) {
-        prepareGet(id).execute(new AbstractActionListener<GetResponse>() {
-
-            @Override
-            public void onResponse(GetResponse response) {
-                if (response.isExists()) {
-                    T obj = JsonUtils.read(response.getSourceAsBytes(), clazz);
-                    obj.setId(response.getId());
-                    function.accept(obj);
-                } else {
-                    function.accept(null);
-                }
-            }
-
-        });
-    }
-
+    /**
+     * Get documents
+     * @param ids documents ids
+     * @return documents with ids
+     */
     public List<T> get(String... ids) {
         if (ids.length > 0) {
             MultiGetResponse response = prepareMultiGet(ids).get();
@@ -154,32 +140,8 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
         }
     }
 
-    public void asyncGet(Consumer<Map<String, T>> function, String... ids) {
-        if (ids.length > 0) {
-            MultiGetRequestBuilder bulk = prepareMultiGet(ids);
-            bulk.execute(new AbstractActionListener<MultiGetResponse>() {
-
-                @Override
-                public void onResponse(MultiGetResponse response) {
-                    Map<String, T> retval = new HashMap<>(response.getResponses().length);
-                    for (MultiGetItemResponse item : response.getResponses()) {
-                        GetResponse resp = item.getResponse();
-                        if (resp.isExists()) {
-                            T obj = JsonUtils.read(resp.getSourceAsBytes(), clazz);
-                            obj.setId(resp.getId());
-                            retval.put(resp.getId(), obj);
-                        }
-                    }
-                    function.accept(retval);
-                }
-
-            });
-        } else {
-            throw new IllegalArgumentException("Ids length must be > 0.");
-        }
-    }
-
     /**
+     * Update document
      * @param obj object to update
      * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
      * shards, so this number can be higher than the number of shards.
@@ -189,8 +151,9 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
     }
 
     /**
+     * Update document
      * @param obj object to update
-     * @param refresh refresh configuration
+     * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
      * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
      * shards, so this number can be higher than the number of shards.
@@ -200,37 +163,23 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
                 .setDoc(JsonUtils.writeValueAsBytes(obj)).get().getShardInfo().getSuccessful();
     }
 
-    public void asyncUpdate(T obj, Consumer<Integer> function) {
-        asyncUpdate(obj, RefreshPolicy.NONE, true, function);
-    }
-
-    public void asyncUpdate(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Integer> function) {
-        prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new AbstractActionListener<UpdateResponse>() {
-
-                    @Override
-                    public void onResponse(UpdateResponse response) {
-                        function.accept(response.getShardInfo().getSuccessful());
-                    }
-
-                });
-    }
-
     /**
+     * Update documents
      * @param objs objects to update
-     * @return new array of objects that was updated. Consider object updated when the total number of shards the write
-     * succeeded on more than 0.
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the total number of
+     * shards the write succeeded on more than 0.
      */
     public List<T> update(List<T> objs) {
         return update(objs, RefreshPolicy.NONE, true);
     }
 
     /**
+     * Update documents
      * @param objs objects to update
-     * @param refresh refresh configuration
+     * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return new array of objects that was updated. Consider object updated when the total number of shards the write
-     * succeeded on more than 0.
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the total number of
+     * shards the write succeeded on more than 0.
      */
     public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();
@@ -251,59 +200,39 @@ public abstract class EntityDao<T extends EsEntity> extends Dao {
     }
 
     /**
-     * Pass to function new array of objects that was updated. Consider object updated when the total number of shards
-     * the write succeeded on more than 0.
-     * @param objs objects to update
-     * @param function operation which will be called after update execution
+     * Delete document
+     * @param id document id to delete
+     * @return true if document deleted
      */
-    public void asyncUpdate(List<T> objs, Consumer<List<T>> function) {
-        asyncUpdate(objs, RefreshPolicy.NONE, true, function);
-    }
-
-    /**
-     * Pass to function new array of objects that was updated. Consider object updated when the total number of shards
-     * the write succeeded on more than 0.
-     * @param objs objects to update
-     * @param refresh refresh configuration
-     * @param docAsUpsert should this doc be upserted or not
-     * @param function operation which will be called after update execution
-     */
-    public void asyncUpdate(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function) {
-        if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
-            for (T obj : objs) {
-                bulk.add(prepareUpdate(obj.getId()).setDocAsUpsert(docAsUpsert)
-                        .setDoc(JsonUtils.writeValueAsBytes(obj)));
-            }
-            bulk.execute(new AbstractActionListener<BulkResponse>() {
-
-                @Override
-                public void onResponse(BulkResponse response) {
-                    ArrayList<T> retval = new ArrayList<>();
-                    for (BulkItemResponse item : response.getItems()) {
-                        if (item.getResponse().getShardInfo().getSuccessful() > 0) {
-                            retval.add(objs.get(item.getItemId()));
-                        }
-                    }
-                    function.accept(retval);
-                }
-
-            });
-        }
-    }
-
     public boolean delete(String id) {
         return delete(id, RefreshPolicy.NONE);
     }
 
+    /**
+     * Delete document
+     * @param id document id to delete
+     * @param refresh refresh index configuration
+     * @return true if document deleted
+     */
     public boolean delete(String id, RefreshPolicy refresh) {
         return prepareDelete(id).setRefreshPolicy(refresh).get().getResult() == Result.DELETED;
     }
 
+    /**
+     * Delete documents
+     * @param ids document ids to delete
+     * @return true if document deleted
+     */
     public boolean delete(String... ids) {
         return delete(RefreshPolicy.NONE, ids);
     }
 
+    /**
+     * Delete documents
+     * @param refresh refresh index configuration
+     * @param ids document ids to delete
+     * @return true if document deleted
+     */
     public boolean delete(RefreshPolicy refresh, String... ids) {
         boolean retval = true;
         if (ids.length > 0) {

@@ -18,7 +18,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class Dao {
+public class Dao {
 
     public static final TimeValue scrollKeepAlive = new TimeValue(60000); // one minute
 

@@ -7,31 +7,28 @@ import java.util.Set;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.escli4j.annotations.Type;
 import com.escli4j.model.EsChildEntity;
 import com.escli4j.model.EsEntity;
-import com.escli4j.util.StaticProps;
 
 public class Mapping {
 
     private static final Logger log = LoggerFactory.getLogger(Mapping.class);
     // <index name, <type name, model class>>
-    protected static final Map<String, Map<String, Class<? extends EsEntity>>> model = new HashMap<>();
+    protected final Map<String, Map<String, Class<? extends EsEntity>>> model = new HashMap<>();
+    protected final Client client;
 
-    static {
-        Reflections reflections;
-        String escliPackage = System.getProperty(StaticProps.PACKAGE);
-        if (escliPackage != null) {
-            reflections = new Reflections(escliPackage);
-        } else {
-            reflections = new Reflections();
-        }
+    public Mapping(Client client) {
+        this(null, client);
+    }
 
-        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Type.class);
+    public Mapping(String modelPackage, Client client) {
+        // get annotated classes
+        Set<Class<?>> classes = MappingReflectUtils.getAnnotatedClasses(modelPackage, Type.class);
+        // fill model map
         for (Class<?> clazz : classes) {
             // check inheritance
             if (!EsEntity.class.isAssignableFrom(clazz)) {
@@ -52,11 +49,7 @@ public class Mapping {
                 throw new IllegalStateException("THere is duplicate model classes " + prev + " and " + clazz);
             }
         }
-    }
-
-    protected final Client client;
-
-    public Mapping(Client client) {
+        // save client
         this.client = client;
     }
 

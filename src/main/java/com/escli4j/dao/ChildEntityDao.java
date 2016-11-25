@@ -2,7 +2,6 @@ package com.escli4j.dao;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -12,7 +11,6 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 
 import com.escli4j.model.EsChildEntity;
@@ -27,14 +25,31 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         this.clazz = clazz;
     }
 
+    /**
+     * Check document existence by id
+     * @param id document id
+     * @param parentId parent document id
+     * @return true if object exists
+     */
     public boolean isExist(String id, String parentId) {
         return prepareGet(id).setParent(parentId).get().isExists();
     }
 
+    /**
+     * Creates document
+     * @param obj document to create
+     * @return same object with id
+     */
     public T create(T obj) {
         return create(obj, RefreshPolicy.NONE);
     }
 
+    /**
+     * Creates document
+     * @param obj document to create
+     * @param refresh refresh index configuration
+     * @return same object with id
+     */
     public T create(T obj, RefreshPolicy refresh) {
         IndexResponse resp = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
                 .setOpType(OpType.CREATE).setSource(JsonUtils.writeValueAsBytes(obj)).get();
@@ -42,27 +57,21 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         return obj;
     }
 
-    public void asyncCreate(T obj, Consumer<T> function) {
-        asyncCreate(obj, RefreshPolicy.NONE, function);
-    }
-
-    public void asyncCreate(T obj, RefreshPolicy refresh, Consumer<T> function) {
-        prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
-                .setSource(JsonUtils.writeValueAsBytes(obj)).execute(new AbstractActionListener<IndexResponse>() {
-
-                    @Override
-                    public void onResponse(IndexResponse response) {
-                        obj.setId(response.getId());
-                        function.accept(obj);
-                    }
-
-                });
-    }
-
+    /**
+     * Creates documents
+     * @param objs documents to create
+     * @return same objects with ids
+     */
     public List<T> create(List<T> objs) {
         return create(objs, RefreshPolicy.NONE);
     }
 
+    /**
+     * Creates documents
+     * @param objs documents to create
+     * @param refresh refresh index configuration
+     * @return same objects with ids
+     */
     public List<T> create(List<T> objs, RefreshPolicy refresh) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
@@ -78,6 +87,12 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         return objs;
     }
 
+    /**
+     * Get document
+     * @param id document id
+     * @param parentId parent document id
+     * @return document with id
+     */
     public T get(String id, String parentId) {
         GetResponse resp = prepareGet(id).setParent(parentId).get();
         if (resp.isExists()) {
@@ -90,25 +105,8 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         }
     }
 
-    public void asyncGet(String id, String parentId, Consumer<T> function) {
-        prepareGet(id).setParent(parentId).execute(new AbstractActionListener<GetResponse>() {
-
-            @Override
-            public void onResponse(GetResponse response) {
-                if (response.isExists()) {
-                    T obj = JsonUtils.read(response.getSourceAsBytes(), clazz);
-                    obj.setId(response.getId());
-                    obj.setParent(parentId);
-                    function.accept(obj);
-                } else {
-                    function.accept(null);
-                }
-            }
-
-        });
-    }
-
     /**
+     * Update document
      * @param obj object to update
      * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
      * shards, so this number can be higher than the number of shards.
@@ -118,6 +116,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
+     * Update document
      * @param obj object to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
@@ -128,22 +127,6 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         return prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
                 .setDocAsUpsert(docAsUpsert).setDoc(JsonUtils.writeValueAsBytes(obj)).get().getShardInfo()
                 .getSuccessful();
-    }
-
-    public void asyncUpdate(T obj, Consumer<Integer> function) {
-        asyncUpdate(obj, RefreshPolicy.NONE, true, function);
-    }
-
-    public void asyncUpdate(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Integer> function) {
-        prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new AbstractActionListener<UpdateResponse>() {
-
-                    @Override
-                    public void onResponse(UpdateResponse response) {
-                        function.accept(response.getShardInfo().getSuccessful());
-                    }
-
-                });
     }
 
     /**
@@ -181,51 +164,22 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     }
 
     /**
-     * Pass to function new array of objects that was updated. Consider object updated when the total number of shards
-     * the write succeeded on more than 0.
-     * @param objs objects to update
-     * @param function operation which will be called after update execution
+     * Delete document
+     * @param id document id to delete
+     * @param parentId parent document id
+     * @return true if document deleted
      */
-    public void asyncUpdate(List<T> objs, Consumer<List<T>> function) {
-        asyncUpdate(objs, RefreshPolicy.NONE, true, function);
-    }
-
-    /**
-     * Pass to function new array of objects that was updated. Consider object updated when the total number of shards
-     * the write succeeded on more than 0.
-     * @param objs objects to update
-     * @param refresh refresh configuration
-     * @param docAsUpsert should this doc be upserted or not
-     * @param function operation which will be called after update execution
-     */
-    public void asyncUpdate(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function) {
-        if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
-            for (T obj : objs) {
-                bulk.add(prepareUpdate(obj.getId()).setParent(obj.getParent()).setDocAsUpsert(docAsUpsert)
-                        .setDoc(JsonUtils.writeValueAsBytes(obj)));
-            }
-            bulk.execute(new AbstractActionListener<BulkResponse>() {
-
-                @Override
-                public void onResponse(BulkResponse response) {
-                    ArrayList<T> retval = new ArrayList<>();
-                    for (BulkItemResponse item : response.getItems()) {
-                        if (item.getResponse().getShardInfo().getSuccessful() > 0) {
-                            retval.add(objs.get(item.getItemId()));
-                        }
-                    }
-                    function.accept(retval);
-                }
-
-            });
-        }
-    }
-
     public boolean delete(String id, String parentId) {
         return delete(id, parentId, RefreshPolicy.NONE);
     }
 
+    /**
+     * Delete document
+     * @param id document id to delete
+     * @param parentId parent document id
+     * @param refresh refresh index configuration
+     * @return true if document deleted
+     */
     public boolean delete(String id, String parentId, RefreshPolicy refresh) {
         return prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).get().getResult() == Result.DELETED;
     }
