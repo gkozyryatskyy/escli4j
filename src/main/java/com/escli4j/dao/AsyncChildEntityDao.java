@@ -71,7 +71,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
 
     /**
      * Asynchronous creates documents
-     * @param objs documents to create
+     * @param obj documents to create
      * @param function callback gets same objects with ids
      */
     public void create(List<T> obj, Consumer<List<T>> function) {
@@ -109,6 +109,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
     /**
      * Asynchronous get document
      * @param id document id
+     * @param parentId parent document id
      * @param function callback gets document with id
      */
     public void get(String id, String parentId, Consumer<T> function) {

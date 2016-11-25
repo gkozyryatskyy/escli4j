@@ -7,14 +7,16 @@ import java.util.List;
 import java.util.Set;
 
 import org.reflections.Reflections;
+import org.reflections.util.ConfigurationBuilder;
 
 public class MappingReflectUtils {
     public static Set<Class<?>> getAnnotatedClasses(String modelPackage, Class<? extends Annotation> annotation) {
         Reflections reflections;
         if (modelPackage != null) {
-            reflections = new Reflections(modelPackage);
+            new ConfigurationBuilder();
+            reflections = new Reflections(ConfigurationBuilder.build(modelPackage));
         } else {
-            reflections = new Reflections();
+            reflections = new Reflections(ConfigurationBuilder.build(""));
         }
         return reflections.getTypesAnnotatedWith(annotation, true);
     }

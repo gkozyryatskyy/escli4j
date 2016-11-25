@@ -18,6 +18,7 @@ public class MappingReflectUtilsTest {
     @Test
     public void getAnnotatedClassesAllTest() {
         Set<Class<?>> classes = MappingReflectUtils.getAnnotatedClasses(null, Type.class);
+        System.out.println(classes);
         Assert.assertTrue(classes.remove(TestModel1.class));
         Assert.assertTrue(classes.remove(TestMappingModel1.class));
         Assert.assertTrue(classes.remove(ParrentMappingModel1.class));

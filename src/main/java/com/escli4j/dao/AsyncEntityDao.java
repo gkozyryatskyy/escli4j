@@ -105,7 +105,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
 
     /**
      * Asynchronous creates documents
-     * @param objs documents to create
+     * @param obj documents to create
      * @param function callback gets same objects with ids
      */
     public void create(List<T> obj, Consumer<List<T>> function) {
