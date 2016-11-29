@@ -29,7 +29,7 @@
 		
         <log4j.version>2.7</log4j.version>
         <junit.version>4.12</junit.version>
-        <jackson.version>2.7.6</jackson.version>
+        <jackson.version>2.8.5</jackson.version>
         <reflections.version>0.9.10</reflections.version>
         <es.version>5.0.1</es.version>
         

@@ -8,6 +8,7 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
@@ -51,8 +52,12 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @return same object with id
      */
     public T create(T obj, RefreshPolicy refresh) {
-        IndexResponse resp = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
-                .setOpType(OpType.CREATE).setSource(JsonUtils.writeValueAsBytes(obj)).get();
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
+                .setSource(JsonUtils.writeValueAsBytes(obj));
+        if (obj.getId() != null) {
+            req.setOpType(OpType.CREATE);
+        }
+        IndexResponse resp = req.get();
         obj.setId(resp.getId());
         return obj;
     }
@@ -76,8 +81,12 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
-                bulk.add(prepareIndex(obj.getId()).setParent(obj.getParent()).setOpType(OpType.CREATE)
-                        .setSource(JsonUtils.writeValueAsBytes(obj)));
+                IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent())
+                        .setSource(JsonUtils.writeValueAsBytes(obj));
+                if (obj.getId() != null) {
+                    req.setOpType(OpType.CREATE);
+                }
+                bulk.add(req);
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {

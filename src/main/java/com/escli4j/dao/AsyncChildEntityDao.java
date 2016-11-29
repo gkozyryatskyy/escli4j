@@ -11,6 +11,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
@@ -63,21 +64,25 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets created document
      */
     public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
-        prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
-                .setSource(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<IndexResponse>() {
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
+                .setSource(JsonUtils.writeValueAsBytes(obj));
+        if (obj.getId() != null) {
+            req.setOpType(OpType.CREATE);
+        }
+        req.execute(new ActionListener<IndexResponse>() {
 
-                    @Override
-                    public void onResponse(IndexResponse response) {
-                        obj.setId(response.getId());
-                        function.accept(obj);
-                    }
+            @Override
+            public void onResponse(IndexResponse response) {
+                obj.setId(response.getId());
+                function.accept(obj);
+            }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        errorFunction.accept(e);
-                    }
+            @Override
+            public void onFailure(Exception e) {
+                errorFunction.accept(e);
+            }
 
-                });
+        });
     }
 
     /**
@@ -100,8 +105,12 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
-                bulk.add(prepareIndex(obj.getId()).setParent(obj.getParent()).setOpType(OpType.CREATE)
-                        .setSource(JsonUtils.writeValueAsBytes(obj)));
+                IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent())
+                        .setSource(JsonUtils.writeValueAsBytes(obj));
+                if (obj.getId() != null) {
+                    req.setOpType(OpType.CREATE);
+                }
+                bulk.add(req);
             }
 
             bulk.execute(new ActionListener<BulkResponse>() {

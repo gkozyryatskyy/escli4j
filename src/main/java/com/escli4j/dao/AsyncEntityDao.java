@@ -18,6 +18,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
@@ -103,21 +104,25 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets created document
      */
     public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
-        prepareIndex(obj.getId()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
-                .setSource(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<IndexResponse>() {
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
+                .setSource(JsonUtils.writeValueAsBytes(obj));
+        if (obj.getId() != null) {
+            req.setOpType(OpType.CREATE);
+        }
+        req.execute(new ActionListener<IndexResponse>() {
 
-                    @Override
-                    public void onResponse(IndexResponse response) {
-                        obj.setId(response.getId());
-                        function.accept(obj);
-                    }
+            @Override
+            public void onResponse(IndexResponse response) {
+                obj.setId(response.getId());
+                function.accept(obj);
+            }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        errorFunction.accept(e);
-                    }
+            @Override
+            public void onFailure(Exception e) {
+                errorFunction.accept(e);
+            }
 
-                });
+        });
     }
 
     /**
@@ -135,12 +140,16 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param refresh refresh index configuration
      * @param function callback gets same objects with ids
      */
-    public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+    public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
+            Consumer<Exception> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
-                bulk.add(
-                        prepareIndex(obj.getId()).setOpType(OpType.CREATE).setSource(JsonUtils.writeValueAsBytes(obj)));
+                IndexRequestBuilder req = prepareIndex(obj.getId()).setSource(JsonUtils.writeValueAsBytes(obj));
+                if (obj.getId() != null) {
+                    req.setOpType(OpType.CREATE);
+                }
+                bulk.add(req);
             }
 
             bulk.execute(new ActionListener<BulkResponse>() {
@@ -325,7 +334,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param refresh refresh index configuration
      * @param function callback gets true if document deleted
      */
-    public void delete(String id, RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+    public void delete(String id, RefreshPolicy refresh, Consumer<Boolean> function,
+            Consumer<Exception> errorFunction) {
         prepareDelete(id).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
             @Override
@@ -355,7 +365,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param refresh refresh index configuration
      * @param ids document ids to delete
      */
-    public void delete(RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Exception> errorFunction, String... ids) {
+    public void delete(RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Exception> errorFunction,
+            String... ids) {
 
         if (ids.length > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);

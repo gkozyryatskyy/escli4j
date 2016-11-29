@@ -11,6 +11,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
@@ -65,8 +66,12 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @return same object with id
      */
     public T create(T obj, RefreshPolicy refresh) {
-        IndexResponse resp = prepareIndex(obj.getId()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
-                .setSource(JsonUtils.writeValueAsBytes(obj)).get();
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
+                .setSource(JsonUtils.writeValueAsBytes(obj));
+        if (obj.getId() != null) {
+            req.setOpType(OpType.CREATE);
+        }
+        IndexResponse resp = req.get();
         obj.setId(resp.getId());
         return obj;
     }
@@ -90,8 +95,11 @@ public class EntityDao<T extends EsEntity> extends Dao {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
-                bulk.add(
-                        prepareIndex(obj.getId()).setOpType(OpType.CREATE).setSource(JsonUtils.writeValueAsBytes(obj)));
+                IndexRequestBuilder req = prepareIndex(obj.getId()).setSource(JsonUtils.writeValueAsBytes(obj));
+                if (obj.getId() != null) {
+                    req.setOpType(OpType.CREATE);
+                }
+                bulk.add(req);
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
