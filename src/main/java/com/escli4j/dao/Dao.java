@@ -83,7 +83,7 @@ public class Dao {
         client.admin().indices().prepareRefresh(index).get();
     }
 
-    public void scrollNext(String scrollId, Consumer<SearchResponse> function) {
-        prepareSearchScroll(scrollId).setScroll(scrollKeepAlive).execute(new ResponseHandler<>(function));
+    public void scrollNext(String scrollId, Consumer<SearchResponse> function, Consumer<Exception> errorFunction) {
+        prepareSearchScroll(scrollId).setScroll(scrollKeepAlive).execute(new ActionHandler<>(function, errorFunction));
     }
 }

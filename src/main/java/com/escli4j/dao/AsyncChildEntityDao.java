@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -31,12 +32,17 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param parentId parent document id
      * @param function callback gets true if object exists
      */
-    public void isExist(String id, String parentId, Consumer<Boolean> function) {
-        prepareGet(id).setParent(parentId).execute(new AbstractActionListener<GetResponse>() {
+    public void isExist(String id, String parentId, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+        prepareGet(id).setParent(parentId).execute(new ActionListener<GetResponse>() {
 
             @Override
             public void onResponse(GetResponse response) {
                 function.accept(response.isExists());
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                errorFunction.accept(e);
             }
         });
     }
@@ -46,8 +52,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param obj document to create
      * @param function callback gets created document
      */
-    public void create(T obj, Consumer<T> function) {
-        create(obj, RefreshPolicy.NONE, function);
+    public void create(T obj, Consumer<T> function, Consumer<Exception> errorFunction) {
+        create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
     /**
@@ -56,14 +62,19 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param refresh refresh index configuration
      * @param function callback gets created document
      */
-    public void create(T obj, RefreshPolicy refresh, Consumer<T> function) {
+    public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
         prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setOpType(OpType.CREATE)
-                .setSource(JsonUtils.writeValueAsBytes(obj)).execute(new AbstractActionListener<IndexResponse>() {
+                .setSource(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<IndexResponse>() {
 
                     @Override
                     public void onResponse(IndexResponse response) {
                         obj.setId(response.getId());
                         function.accept(obj);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        errorFunction.accept(e);
                     }
 
                 });
@@ -74,8 +85,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param obj documents to create
      * @param function callback gets same objects with ids
      */
-    public void create(List<T> obj, Consumer<List<T>> function) {
-        create(obj, RefreshPolicy.NONE, function);
+    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+        create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
     /**
@@ -84,7 +95,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param refresh refresh index configuration
      * @param function callback gets same objects with ids
      */
-    public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function) {
+    public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
+            Consumer<Exception> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
@@ -92,7 +104,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                         .setSource(JsonUtils.writeValueAsBytes(obj)));
             }
 
-            bulk.execute(new AbstractActionListener<BulkResponse>() {
+            bulk.execute(new ActionListener<BulkResponse>() {
 
                 @Override
                 public void onResponse(BulkResponse response) {
@@ -100,6 +112,11 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                         objs.get(item.getItemId()).setId(item.getId());
                     }
                     function.accept(objs);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    errorFunction.accept(e);
                 }
 
             });
@@ -112,8 +129,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param parentId parent document id
      * @param function callback gets document with id
      */
-    public void get(String id, String parentId, Consumer<T> function) {
-        prepareGet(id).setParent(parentId).execute(new AbstractActionListener<GetResponse>() {
+    public void get(String id, String parentId, Consumer<T> function, Consumer<Exception> errorFunction) {
+        prepareGet(id).setParent(parentId).execute(new ActionListener<GetResponse>() {
 
             @Override
             public void onResponse(GetResponse response) {
@@ -127,6 +144,11 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                 }
             }
 
+            @Override
+            public void onFailure(Exception e) {
+                errorFunction.accept(e);
+            }
+
         });
     }
 
@@ -136,8 +158,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets the total number of shards the write succeeded on (replicas and primaries). This
      * includes relocating shards, so this number can be higher than the number of shards.
      */
-    public void update(T obj, Consumer<Integer> function) {
-        update(obj, RefreshPolicy.NONE, true, function);
+    public void update(T obj, Consumer<Integer> function, Consumer<Exception> errorFunction) {
+        update(obj, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
     /**
@@ -148,13 +170,19 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets the total number of shards the write succeeded on (replicas and primaries). This
      * includes relocating shards, so this number can be higher than the number of shards.
      */
-    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Integer> function) {
+    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Integer> function,
+            Consumer<Exception> errorFunction) {
         prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new AbstractActionListener<UpdateResponse>() {
+                .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
                     @Override
                     public void onResponse(UpdateResponse response) {
                         function.accept(response.getShardInfo().getSuccessful());
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        errorFunction.accept(e);
                     }
 
                 });
@@ -166,8 +194,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param objs objects to update
      * @param function operation which will be called after update execution
      */
-    public void update(List<T> objs, Consumer<List<T>> function) {
-        update(objs, RefreshPolicy.NONE, true, function);
+    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+        update(objs, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
     /**
@@ -178,14 +206,15 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param docAsUpsert should this doc be upserted or not
      * @param function operation which will be called after update execution
      */
-    public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function) {
+    public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
+            Consumer<Exception> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 bulk.add(prepareUpdate(obj.getId()).setParent(obj.getParent()).setDocAsUpsert(docAsUpsert)
                         .setDoc(JsonUtils.writeValueAsBytes(obj)));
             }
-            bulk.execute(new AbstractActionListener<BulkResponse>() {
+            bulk.execute(new ActionListener<BulkResponse>() {
 
                 @Override
                 public void onResponse(BulkResponse response) {
@@ -198,6 +227,11 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                     function.accept(retval);
                 }
 
+                @Override
+                public void onFailure(Exception e) {
+                    errorFunction.accept(e);
+                }
+
             });
         }
     }
@@ -208,8 +242,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param parentId parent document id
      * @param function callback gets true if document deleted
      */
-    public void delete(String id, String parentId, Consumer<Boolean> function) {
-        delete(id, parentId, RefreshPolicy.NONE, function);
+    public void delete(String id, String parentId, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+        delete(id, parentId, RefreshPolicy.NONE, function, errorFunction);
     }
 
     /**
@@ -219,15 +253,20 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param refresh refresh index configuration
      * @param function callback gets true if document deleted
      */
-    public void delete(String id, String parentId, RefreshPolicy refresh, Consumer<Boolean> function) {
-        prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh)
-                .execute(new AbstractActionListener<DeleteResponse>() {
+    public void delete(String id, String parentId, RefreshPolicy refresh, Consumer<Boolean> function,
+            Consumer<Exception> errorFunction) {
+        prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
-                    @Override
-                    public void onResponse(DeleteResponse response) {
-                        function.accept(response.getResult() == Result.DELETED);
-                    }
-                });
+            @Override
+            public void onResponse(DeleteResponse response) {
+                function.accept(response.getResult() == Result.DELETED);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                errorFunction.accept(e);
+            }
+        });
     }
 
 }
