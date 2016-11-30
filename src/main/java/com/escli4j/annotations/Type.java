@@ -28,6 +28,12 @@ public @interface Type{
     String type();
 
     /**
+     * Name of the parent type of this type
+     * @return type name
+     */
+    String parent() default "";
+
+    /**
      * Create index and type if not exist
      * @return true if index should be created if not exists, false otherwise
      */

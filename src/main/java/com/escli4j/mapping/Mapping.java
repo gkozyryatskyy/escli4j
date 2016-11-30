@@ -30,12 +30,17 @@ public class Mapping {
         Set<Class<?>> classes = MappingReflectUtils.getAnnotatedClasses(modelPackage, Type.class);
         // fill model map
         for (Class<?> clazz : classes) {
-            // check inheritance
-            if (!EsEntity.class.isAssignableFrom(clazz)) {
-                throw new IllegalStateException(
-                        clazz + " not an instance of " + EsEntity.class + " or " + EsChildEntity.class);
-            }
             Type typeAmmotation = clazz.getAnnotation(Type.class);
+            // check inheritance
+            if ("".equals(typeAmmotation.parent())) {
+                if (!EsEntity.class.isAssignableFrom(clazz)) {
+                    throw new IllegalStateException(clazz + " not an instance of " + EsEntity.class);
+                }
+            } else {
+                if (!EsChildEntity.class.isAssignableFrom(clazz)) {
+                    throw new IllegalStateException(clazz + " not an instance of " + EsChildEntity.class);
+                }
+            }
             // fill indexes map
             Map<String, Class<? extends EsEntity>> typesMap = model.get(typeAmmotation.index());
             if (typesMap == null) {

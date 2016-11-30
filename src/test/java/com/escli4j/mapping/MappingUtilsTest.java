@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import com.escli4j.mapping.model.SubMappingModel2;
 import com.escli4j.mapping.model.TestMappingModel1;
+import com.escli4j.mapping.model.TestMappingModel2;
+import com.escli4j.mapping.model.TestMappingModel3;
 
 public class MappingUtilsTest {
 
@@ -34,6 +36,19 @@ public class MappingUtilsTest {
     public void getMappingBuilderWithParentTest() throws IOException {
         XContentBuilder builder = MappingUtils.getMappingBuilder("test", SubMappingModel2.class);
         Assert.assertEquals(readJson("SubMappingModel2.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
+    }
+
+    @Test
+    public void getMappingBuilderNestedArrayTest() throws IOException {
+        XContentBuilder builder = MappingUtils.getMappingBuilder("test", TestMappingModel2.class);
+        Assert.assertEquals(readJson("TestMappingModel2.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
+    }
+
+    @Test
+    public void getMappingBuilderChildTest() throws IOException {
+        XContentBuilder builder = MappingUtils.getMappingBuilder("testChild", "test", TestMappingModel3.class);
+        System.out.println(builder.string());
+        Assert.assertEquals(readJson("TestMappingModel3.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
 
 }

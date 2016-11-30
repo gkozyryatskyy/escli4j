@@ -1,0 +1,12 @@
+{
+   "testChild":{
+      "_parent":{
+         "type":"test"
+      },
+      "properties":{
+         "field1":{
+            "type":"text"
+         }
+      }
+   }
+}

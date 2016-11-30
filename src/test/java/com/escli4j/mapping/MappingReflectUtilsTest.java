@@ -11,6 +11,8 @@ import com.escli4j.annotations.Type;
 import com.escli4j.mapping.model.ParrentMappingModel1;
 import com.escli4j.mapping.model.SubMappingModel2;
 import com.escli4j.mapping.model.TestMappingModel1;
+import com.escli4j.mapping.model.TestMappingModel2;
+import com.escli4j.mapping.model.TestMappingModel3;
 import com.escli4j.model.TestModel1;
 
 public class MappingReflectUtilsTest {
@@ -21,6 +23,8 @@ public class MappingReflectUtilsTest {
         System.out.println(classes);
         Assert.assertTrue(classes.remove(TestModel1.class));
         Assert.assertTrue(classes.remove(TestMappingModel1.class));
+        Assert.assertTrue(classes.remove(TestMappingModel2.class));
+        Assert.assertTrue(classes.remove(TestMappingModel3.class));
         Assert.assertTrue(classes.remove(ParrentMappingModel1.class));
         Assert.assertTrue(classes.remove(SubMappingModel2.class));
         Assert.assertEquals(classes.toString(), 0, classes.size());
@@ -31,6 +35,8 @@ public class MappingReflectUtilsTest {
         Set<Class<?>> classes = MappingReflectUtils.getAnnotatedClasses("com.escli4j", Type.class);
         Assert.assertTrue(classes.remove(TestModel1.class));
         Assert.assertTrue(classes.remove(TestMappingModel1.class));
+        Assert.assertTrue(classes.remove(TestMappingModel2.class));
+        Assert.assertTrue(classes.remove(TestMappingModel3.class));
         Assert.assertTrue(classes.remove(ParrentMappingModel1.class));
         Assert.assertTrue(classes.remove(SubMappingModel2.class));
         Assert.assertEquals(classes.toString(), 0, classes.size());

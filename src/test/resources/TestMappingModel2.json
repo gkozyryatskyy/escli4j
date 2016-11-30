@@ -1,0 +1,35 @@
+{
+   "test":{
+      "properties":{
+         "field1":{
+            "type":"text"
+         },
+         "field2":{
+            "type":"nested",
+            "properties":{
+               "field4":{
+                  "type":"keyword",
+                  "fields":{
+                     "indexed":{
+                        "type":"text"
+                     }
+                  }
+               }
+            }
+         },
+         "field3":{
+            "type":"nested",
+            "properties":{
+               "field4":{
+                  "type":"keyword",
+                  "fields":{
+                     "indexed":{
+                        "type":"text"
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}
