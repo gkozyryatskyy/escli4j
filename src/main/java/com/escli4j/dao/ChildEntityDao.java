@@ -117,10 +117,9 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     /**
      * Update document
      * @param obj object to update
-     * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
-     * shards, so this number can be higher than the number of shards.
+     * @return result of the update request
      */
-    public int update(T obj) {
+    public Result update(T obj) {
         return update(obj, RefreshPolicy.NONE, true);
     }
 
@@ -129,19 +128,17 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param obj object to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
-     * shards, so this number can be higher than the number of shards.
+     * @return result of the update request
      */
-    public int update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
+    public Result update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
         return prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
-                .setDocAsUpsert(docAsUpsert).setDoc(JsonUtils.writeValueAsBytes(obj)).get().getShardInfo()
-                .getSuccessful();
+                .setDocAsUpsert(docAsUpsert).setDoc(JsonUtils.writeValueAsBytes(obj)).get().getResult();
     }
 
     /**
      * @param objs objects to update
-     * @return new array of objects that was updated. Consider object updated when the total number of shards the write
-     * succeeded on more than 0.
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
+     * update request is UPDATED
      */
     public List<T> update(List<T> objs) {
         return update(objs, RefreshPolicy.NONE, true);
@@ -151,8 +148,8 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param objs objects to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return new array of objects that was updated. Consider object updated when the total number of shards the write
-     * succeeded on more than 0.
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
+     * update request is UPDATED
      */
     public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();
@@ -164,7 +161,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                if (item.getResponse().getResult() == Result.UPDATED) {
                     retval.add(objs.get(item.getItemId()));
                 }
             }
@@ -176,9 +173,9 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * Delete document
      * @param id document id to delete
      * @param parentId parent document id
-     * @return true if document deleted
+     * @return result of the delete request
      */
-    public boolean delete(String id, String parentId) {
+    public Result delete(String id, String parentId) {
         return delete(id, parentId, RefreshPolicy.NONE);
     }
 
@@ -187,9 +184,9 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param id document id to delete
      * @param parentId parent document id
      * @param refresh refresh index configuration
-     * @return true if document deleted
+     * @return result of the delete request
      */
-    public boolean delete(String id, String parentId, RefreshPolicy refresh) {
-        return prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).get().getResult() == Result.DELETED;
+    public Result delete(String id, String parentId, RefreshPolicy refresh) {
+        return prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).get().getResult();
     }
 }

@@ -32,6 +32,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param id document id
      * @param parentId parent document id
      * @param function callback gets true if object exists
+     * @param errorFunction callback gets exception on failure
      */
     public void isExist(String id, String parentId, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
         prepareGet(id).setParent(parentId).execute(new ActionListener<GetResponse>() {
@@ -52,6 +53,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * Asynchronous creates document
      * @param obj document to create
      * @param function callback gets created document
+     * @param errorFunction callback gets exception on failure
      */
     public void create(T obj, Consumer<T> function, Consumer<Exception> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
@@ -62,6 +64,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param obj document to create
      * @param refresh refresh index configuration
      * @param function callback gets created document
+     * @param errorFunction callback gets exception on failure
      */
     public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
@@ -89,6 +92,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * Asynchronous creates documents
      * @param obj documents to create
      * @param function callback gets same objects with ids
+     * @param errorFunction callback gets exception on failure
      */
     public void create(List<T> obj, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
@@ -99,6 +103,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param objs documents to create
      * @param refresh refresh index configuration
      * @param function callback gets same objects with ids
+     * @param errorFunction callback gets exception on failure
      */
     public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
             Consumer<Exception> errorFunction) {
@@ -137,6 +142,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param id document id
      * @param parentId parent document id
      * @param function callback gets document with id
+     * @param errorFunction callback gets exception on failure
      */
     public void get(String id, String parentId, Consumer<T> function, Consumer<Exception> errorFunction) {
         prepareGet(id).setParent(parentId).execute(new ActionListener<GetResponse>() {
@@ -164,10 +170,10 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
     /**
      * Asynchronous update document
      * @param obj object to update
-     * @param function callback gets the total number of shards the write succeeded on (replicas and primaries). This
-     * includes relocating shards, so this number can be higher than the number of shards.
+     * @param function callback gets result of the delete request
+     * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, Consumer<Integer> function, Consumer<Exception> errorFunction) {
+    public void update(T obj, Consumer<Result> function, Consumer<Exception> errorFunction) {
         update(obj, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
@@ -176,17 +182,17 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param obj object to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @param function callback gets the total number of shards the write succeeded on (replicas and primaries). This
-     * includes relocating shards, so this number can be higher than the number of shards.
+     * @param function callback gets result of the delete request
+     * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Integer> function,
+    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Result> function,
             Consumer<Exception> errorFunction) {
         prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
                 .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
                     @Override
                     public void onResponse(UpdateResponse response) {
-                        function.accept(response.getShardInfo().getSuccessful());
+                        function.accept(response.getResult());
                     }
 
                     @Override
@@ -201,7 +207,9 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * Asynchronous update documents Pass to function new array of objects that was updated. Consider object updated
      * when the total number of shards the write succeeded on more than 0.
      * @param objs objects to update
-     * @param function operation which will be called after update execution
+     * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
+     * when the result of the update request is UPDATED
+     * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
         update(objs, RefreshPolicy.NONE, true, function, errorFunction);
@@ -213,7 +221,9 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param objs objects to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @param function operation which will be called after update execution
+     * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
+     * when the result of the update request is UPDATED
+     * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
             Consumer<Exception> errorFunction) {
@@ -229,7 +239,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                 public void onResponse(BulkResponse response) {
                     ArrayList<T> retval = new ArrayList<>();
                     for (BulkItemResponse item : response.getItems()) {
-                        if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                        if (item.getResponse().getResult() == Result.UPDATED) {
                             retval.add(objs.get(item.getItemId()));
                         }
                     }
@@ -249,9 +259,10 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * Asynchronous delete document
      * @param id document id to delete
      * @param parentId parent document id
-     * @param function callback gets true if document deleted
+     * @param function callback gets result of the delete request
+     * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, String parentId, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+    public void delete(String id, String parentId, Consumer<Result> function, Consumer<Exception> errorFunction) {
         delete(id, parentId, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -260,15 +271,16 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param id document id to delete
      * @param parentId parent document id
      * @param refresh refresh index configuration
-     * @param function callback gets true if document deleted
+     * @param function callback gets result of the delete request
+     * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, String parentId, RefreshPolicy refresh, Consumer<Boolean> function,
+    public void delete(String id, String parentId, RefreshPolicy refresh, Consumer<Result> function,
             Consumer<Exception> errorFunction) {
         prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
             @Override
             public void onResponse(DeleteResponse response) {
-                function.accept(response.getResult() == Result.DELETED);
+                function.accept(response.getResult());
             }
 
             @Override

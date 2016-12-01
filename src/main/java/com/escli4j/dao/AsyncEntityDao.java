@@ -38,6 +38,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * Asynchronous check document existence by id
      * @param id document id
      * @param function callback gets true if object exists
+     * @param errorFunction callback gets exception on failure
      */
     public void isExist(String id, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
         prepareGet(id).execute(new ActionListener<GetResponse>() {
@@ -58,6 +59,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
     /**
      * Asynchronous check document existence by id
      * @param function callback gets Set of the unique existed ids
+     * @param errorFunction callback gets exception on failure
      * @param ids document id
      */
     public void isExist(Consumer<Set<String>> function, Consumer<Exception> errorFunction, String... ids) {
@@ -92,6 +94,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * Asynchronous creates document
      * @param obj document to create
      * @param function callback gets created document
+     * @param errorFunction callback gets exception on failure
      */
     public void create(T obj, Consumer<T> function, Consumer<Exception> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
@@ -102,6 +105,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param obj document to create
      * @param refresh refresh index configuration
      * @param function callback gets created document
+     * @param errorFunction callback gets exception on failure
      */
     public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
@@ -129,6 +133,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * Asynchronous creates documents
      * @param obj documents to create
      * @param function callback gets same objects with ids
+     * @param errorFunction callback gets exception on failure
      */
     public void create(List<T> obj, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
@@ -139,6 +144,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param objs documents to create
      * @param refresh refresh index configuration
      * @param function callback gets same objects with ids
+     * @param errorFunction callback gets exception on failure
      */
     public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
             Consumer<Exception> errorFunction) {
@@ -175,6 +181,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * Asynchronous get document
      * @param id document id
      * @param function callback gets document with id
+     * @param errorFunction callback gets exception on failure
      */
     public void get(String id, Consumer<T> function, Consumer<Exception> errorFunction) {
         prepareGet(id).execute(new ActionListener<GetResponse>() {
@@ -200,8 +207,9 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
 
     /**
      * Asynchronous gets documents
-     * @param ids documents ids
      * @param function callback gets documents with ids
+     * @param errorFunction callback gets exception on failure
+     * @param ids documents ids
      */
     public void get(Consumer<Map<String, T>> function, Consumer<Exception> errorFunction, String... ids) {
         if (ids.length > 0) {
@@ -236,10 +244,10 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
     /**
      * Asynchronous update document
      * @param obj object to update
-     * @param function callback gets the total number of shards the write succeeded on (replicas and primaries). This
-     * includes relocating shards, so this number can be higher than the number of shards.
+     * @param function callback gets result of the update request
+     * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, Consumer<Integer> function, Consumer<Exception> errorFunction) {
+    public void update(T obj, Consumer<Result> function, Consumer<Exception> errorFunction) {
         update(obj, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
@@ -248,17 +256,17 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param obj object to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @param function callback gets the total number of shards the write succeeded on (replicas and primaries). This
-     * includes relocating shards, so this number can be higher than the number of shards.
+     * @param function callback gets result of the update request
+     * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Integer> function,
+    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Result> function,
             Consumer<Exception> errorFunction) {
         prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
                 .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
                     @Override
                     public void onResponse(UpdateResponse response) {
-                        function.accept(response.getShardInfo().getSuccessful());
+                        function.accept(response.getResult());
                     }
 
                     @Override
@@ -274,7 +282,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * when the total number of shards the write succeeded on more than 0.
      * @param objs objects to update
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
-     * when the total number of shards the write succeeded on more than 0.
+     * when the result of the update request is UPDATED
+     * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
         update(objs, RefreshPolicy.NONE, true, function, errorFunction);
@@ -287,7 +296,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
-     * when the total number of shards the write succeeded on more than 0.
+     * when the result of the update request is UPDATED
+     * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
             Consumer<Exception> errorFunction) {
@@ -303,7 +313,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 public void onResponse(BulkResponse response) {
                     ArrayList<T> retval = new ArrayList<>();
                     for (BulkItemResponse item : response.getItems()) {
-                        if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                        if (item.getResponse().getResult() == Result.UPDATED) {
                             retval.add(objs.get(item.getItemId()));
                         }
                     }
@@ -322,9 +332,10 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
     /**
      * Asynchronous delete document
      * @param id document id to delete
-     * @param function callback gets true if document deleted
+     * @param function callback gets result of the delete request
+     * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+    public void delete(String id, Consumer<Result> function, Consumer<Exception> errorFunction) {
         delete(id, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -332,15 +343,15 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * Asynchronous delete document
      * @param id document id to delete
      * @param refresh refresh index configuration
-     * @param function callback gets true if document deleted
+     * @param function callback gets result of the delete request
+     * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, RefreshPolicy refresh, Consumer<Boolean> function,
-            Consumer<Exception> errorFunction) {
+    public void delete(String id, RefreshPolicy refresh, Consumer<Result> function, Consumer<Exception> errorFunction) {
         prepareDelete(id).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
             @Override
             public void onResponse(DeleteResponse response) {
-                function.accept(response.getResult() == Result.DELETED);
+                function.accept(response.getResult());
             }
 
             @Override
@@ -352,7 +363,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
 
     /**
      * Asynchronous delete documents
-     * @param function callback gets true if document deleted
+     * @param function callback gets true if all documents deleted
+     * @param errorFunction callback gets exception on failure
      * @param ids document ids to delete
      */
     public void delete(Consumer<Boolean> function, Consumer<Exception> errorFunction, String... ids) {
@@ -361,8 +373,9 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
 
     /**
      * Asynchronous delete documents
-     * @param function callback gets true if document deleted
      * @param refresh refresh index configuration
+     * @param function callback gets true if all documents deleted
+     * @param errorFunction callback gets exception on failure
      * @param ids document ids to delete
      */
     public void delete(RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Exception> errorFunction,

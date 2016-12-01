@@ -151,10 +151,9 @@ public class EntityDao<T extends EsEntity> extends Dao {
     /**
      * Update document
      * @param obj object to update
-     * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
-     * shards, so this number can be higher than the number of shards.
+     * @return result of the update request
      */
-    public int update(T obj) {
+    public Result update(T obj) {
         return update(obj, RefreshPolicy.NONE, true);
     }
 
@@ -163,19 +162,18 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param obj object to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return the total number of shards the write succeeded on (replicas and primaries). This includes relocating
-     * shards, so this number can be higher than the number of shards.
+     * @return result of the update request
      */
-    public int update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
+    public Result update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
         return prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).get().getShardInfo().getSuccessful();
+                .setDoc(JsonUtils.writeValueAsBytes(obj)).get().getResult();
     }
 
     /**
      * Update documents
      * @param objs objects to update
-     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the total number of
-     * shards the write succeeded on more than 0.
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
+     * update request is UPDATED
      */
     public List<T> update(List<T> objs) {
         return update(objs, RefreshPolicy.NONE, true);
@@ -186,8 +184,8 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param objs objects to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the total number of
-     * shards the write succeeded on more than 0.
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
+     * update request is UPDATED
      */
     public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();
@@ -199,7 +197,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                if (item.getResponse().getResult() == Result.UPDATED) {
                     retval.add(objs.get(item.getItemId()));
                 }
             }
@@ -210,9 +208,9 @@ public class EntityDao<T extends EsEntity> extends Dao {
     /**
      * Delete document
      * @param id document id to delete
-     * @return true if document deleted
+     * @return result of the delete request
      */
-    public boolean delete(String id) {
+    public Result delete(String id) {
         return delete(id, RefreshPolicy.NONE);
     }
 
@@ -220,16 +218,16 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * Delete document
      * @param id document id to delete
      * @param refresh refresh index configuration
-     * @return true if document deleted
+     * @return result of the delete request
      */
-    public boolean delete(String id, RefreshPolicy refresh) {
-        return prepareDelete(id).setRefreshPolicy(refresh).get().getResult() == Result.DELETED;
+    public Result delete(String id, RefreshPolicy refresh) {
+        return prepareDelete(id).setRefreshPolicy(refresh).get().getResult();
     }
 
     /**
      * Delete documents
      * @param ids document ids to delete
-     * @return true if document deleted
+     * @return true if all documents deleted
      */
     public boolean delete(String... ids) {
         return delete(RefreshPolicy.NONE, ids);
@@ -239,7 +237,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * Delete documents
      * @param refresh refresh index configuration
      * @param ids document ids to delete
-     * @return true if document deleted
+     * @return true if all documents deleted
      */
     public boolean delete(RefreshPolicy refresh, String... ids) {
         boolean retval = true;
@@ -250,7 +248,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                retval &= !item.isFailed();
+                retval &= item.getResponse().getResult() == Result.DELETED;
             }
         }
         return retval;
