@@ -85,7 +85,8 @@ public class Mapping {
             Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
             if (typeAmmotation.create()) {
                 execute = true;
-                builder.addMapping(entry.getKey(), MappingUtils.getMappingBuilder(entry.getKey(), entry.getValue()));
+                builder.addMapping(entry.getKey(),
+                        MappingUtils.getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()));
             }
         }
         // not send get request if execute == false
@@ -99,9 +100,10 @@ public class Mapping {
             Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
             if (typeAmmotation.update()) {
                 execute = true;
-                result &= client.admin().indices().preparePutMapping(index).setType(entry.getKey())
-                        .setSource(MappingUtils.getMappingBuilder(entry.getKey(), entry.getValue())).get()
-                        .isAcknowledged();
+                result &= client.admin().indices()
+                        .preparePutMapping(index).setType(entry.getKey()).setSource(MappingUtils
+                                .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
+                        .get().isAcknowledged();
             }
         }
         return execute && result;
