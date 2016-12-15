@@ -1,5 +1,8 @@
 package com.escli4j.mapping.model;
 
+import com.escli4j.annotations.Context;
+import com.escli4j.annotations.Context.ContextType;
+import com.escli4j.annotations.Contexts;
 import com.escli4j.annotations.Field;
 import com.escli4j.annotations.InnerField;
 import com.escli4j.annotations.Type;
@@ -23,5 +26,15 @@ public class TestMappingModel1 {
         @Field(dataType = DataType.KEYWORD)
         public Inner field6;
     }
+
+    @Field(dataType = DataType.COMPLETION)
+    public String field5;
+
+    @Field(dataType = DataType.COMPLETION)
+    @Contexts({ @Context(name = "catName", type = ContextType.CATEGORY, path = "cat"),
+            @Context(name = "geoName", type = ContextType.GEO, path = "geo") })
+    public String field6;
+    public String cat;
+    public String geo;
 
 }

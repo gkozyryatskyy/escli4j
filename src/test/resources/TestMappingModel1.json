@@ -25,6 +25,24 @@
                   "type":"text"
                }
             }
+         },
+         "field5":{
+            "type":"completion"
+         },
+         "field6":{
+            "type":"completion",
+            "contexts":[
+               {
+                  "name":"catName",
+                  "type":"category",
+                  "path":"cat"
+               },
+               {
+                  "name":"geoName",
+                  "type":"geo",
+                  "path":"geo"
+               }
+            ]
          }
       }
    }

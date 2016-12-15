@@ -8,6 +8,8 @@ import java.util.List;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
+import com.escli4j.annotations.Context;
+import com.escli4j.annotations.Contexts;
 import com.escli4j.annotations.InnerField;
 
 public class MappingUtils {
@@ -47,7 +49,13 @@ public class MappingUtils {
             com.escli4j.annotations.Field fieldAnnotation = field.getAnnotation(com.escli4j.annotations.Field.class);
             contentBuilder.startObject(field.getName());
             // ------------ process dataType -----------------
-            buildDataType(contentBuilder, fieldType, fieldAnnotation.dataType(), field.getName());
+            buildType(contentBuilder, fieldType, fieldAnnotation.dataType(), field.getName());
+            if (DataType.COMPLETION == fieldAnnotation.dataType()) {
+                Contexts contexts = field.getAnnotation(Contexts.class);
+                if (contexts != null) {
+                    buildContexts(contentBuilder, field.getAnnotation(Contexts.class));
+                }
+            }
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
             // ------------ process fields -----------------
@@ -57,7 +65,7 @@ public class MappingUtils {
         contentBuilder.endObject();
     }
 
-    private static void buildDataType(XContentBuilder contentBuilder, Class<?> javaType, DataType dataType, String name)
+    private static void buildType(XContentBuilder contentBuilder, Class<?> javaType, DataType dataType, String name)
             throws IOException {
         // map data type
         if (DataType.NONE == dataType) {
@@ -73,6 +81,22 @@ public class MappingUtils {
         }
     }
 
+    private static void buildContexts(XContentBuilder contentBuilder, Contexts annotation) throws IOException {
+        contentBuilder.startArray("contexts");
+        for (Context context : annotation.value()) {
+            buildContext(contentBuilder, context);
+        }
+        contentBuilder.endArray();
+    }
+
+    private static void buildContext(XContentBuilder contentBuilder, Context annotation) throws IOException {
+        contentBuilder.startObject();
+        contentBuilder.field("name", annotation.name());
+        contentBuilder.field("type", annotation.type().name().toLowerCase());
+        contentBuilder.field("path", annotation.path());
+        contentBuilder.endObject();
+    }
+
     private static void buildDocValues(XContentBuilder contentBuilder, boolean docValues) throws IOException {
         if (!docValues) {
             contentBuilder.field("doc_values", false);
@@ -86,7 +110,7 @@ public class MappingUtils {
             for (InnerField innerField : innerFields) {
                 contentBuilder.startObject(innerField.name());
                 // ------------ process dataType -----------------
-                buildDataType(contentBuilder, javaType, innerField.dataType(), innerField.name());
+                buildType(contentBuilder, javaType, innerField.dataType(), innerField.name());
                 // ------------ process docValues -----------------
                 buildDocValues(contentBuilder, innerField.docValues());
                 contentBuilder.endObject();
