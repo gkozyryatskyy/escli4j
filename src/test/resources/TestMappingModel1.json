@@ -43,6 +43,26 @@
                   "path":"geo"
                }
             ]
+         },
+         "field7":{
+            "type":"keyword",
+            "fields":{
+               "suggest":{
+                  "type":"completion",
+                  "contexts":[
+                     {
+                        "name":"catName",
+                        "type":"category",
+                        "path":"cat"
+                     },
+                     {
+                        "name":"geoName",
+                        "type":"geo",
+                        "path":"geo"
+                     }
+                  ]
+               }
+            }
          }
       }
    }

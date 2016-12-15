@@ -37,4 +37,9 @@ public class TestMappingModel1 {
     public String cat;
     public String geo;
 
+    @Field(dataType = DataType.KEYWORD, fields = { @InnerField(name = "suggest", dataType = DataType.COMPLETION) })
+    @Contexts({ @Context(name = "catName", type = ContextType.CATEGORY, path = "cat"),
+            @Context(name = "geoName", type = ContextType.GEO, path = "geo") })
+    public String field7;
+
 }

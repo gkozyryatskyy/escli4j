@@ -49,24 +49,18 @@ public class MappingUtils {
             com.escli4j.annotations.Field fieldAnnotation = field.getAnnotation(com.escli4j.annotations.Field.class);
             contentBuilder.startObject(field.getName());
             // ------------ process dataType -----------------
-            buildType(contentBuilder, fieldType, fieldAnnotation.dataType(), field.getName());
-            if (DataType.COMPLETION == fieldAnnotation.dataType()) {
-                Contexts contexts = field.getAnnotation(Contexts.class);
-                if (contexts != null) {
-                    buildContexts(contentBuilder, field.getAnnotation(Contexts.class));
-                }
-            }
+            buildType(contentBuilder, field, fieldType, fieldAnnotation.dataType(), field.getName());
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
             // ------------ process fields -----------------
-            buildFields(contentBuilder, fieldType, fieldAnnotation.fields());
+            buildFields(contentBuilder, field, fieldType, fieldAnnotation.fields());
             contentBuilder.endObject();
         }
         contentBuilder.endObject();
     }
 
-    private static void buildType(XContentBuilder contentBuilder, Class<?> javaType, DataType dataType, String name)
-            throws IOException {
+    private static void buildType(XContentBuilder contentBuilder, Field field, Class<?> javaType, DataType dataType,
+            String name) throws IOException {
         // map data type
         if (DataType.NONE == dataType) {
             // skip
@@ -74,9 +68,15 @@ public class MappingUtils {
             // add object properties
             contentBuilder.field("type", dataType.name().toLowerCase());
             buildProperties(contentBuilder, javaType);
+        } else if (DataType.COMPLETION == dataType) {
+            // add completion type
+            contentBuilder.field("type", dataType.name().toLowerCase());
+            Contexts contexts = field.getAnnotation(Contexts.class);
+            if (contexts != null) {
+                buildContexts(contentBuilder, field.getAnnotation(Contexts.class));
+            }
         } else {
             // add simple fields
-            // TODO
             contentBuilder.field("type", dataType.name().toLowerCase());
         }
     }
@@ -103,14 +103,14 @@ public class MappingUtils {
         }
     }
 
-    private static void buildFields(XContentBuilder contentBuilder, Class<?> javaType, InnerField[] innerFields)
-            throws IOException {
+    private static void buildFields(XContentBuilder contentBuilder, Field field, Class<?> javaType,
+            InnerField[] innerFields) throws IOException {
         if (innerFields.length > 0) {
             contentBuilder.startObject("fields");
             for (InnerField innerField : innerFields) {
                 contentBuilder.startObject(innerField.name());
                 // ------------ process dataType -----------------
-                buildType(contentBuilder, javaType, innerField.dataType(), innerField.name());
+                buildType(contentBuilder, field, javaType, innerField.dataType(), innerField.name());
                 // ------------ process docValues -----------------
                 buildDocValues(contentBuilder, innerField.docValues());
                 contentBuilder.endObject();
