@@ -34,18 +34,16 @@
          },
          "field6":{
             "type":"completion",
-            "constrings":[
-               {
-                  "name":"catName",
+            "context":{
+               "catName":{
                   "type":"category",
                   "path":"cat"
                },
-               {
-                  "name":"geoName",
+               "geoName":{
                   "type":"geo",
                   "path":"geo"
                }
-            ]
+            }
          },
          "field7":{
             "type": "string",
@@ -53,16 +51,16 @@
             "fields":{
                "suggest":{
                   "type":"completion",
-                  "contexts":[
-                     {
+                  "context":{
+                     "catName":{
                         "type":"category",
                         "path":"cat"
                      },
-                     {
+                     "geoName":{
                         "type":"geo",
                         "path":"geo"
                      }
-                  ]
+                  }
                }
             }
          }

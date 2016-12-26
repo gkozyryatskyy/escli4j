@@ -84,15 +84,15 @@ public class MappingUtils {
     }
 
     private static void buildContexts(XContentBuilder contentBuilder, Contexts annotation) throws IOException {
-        contentBuilder.startArray("contexts");
+        contentBuilder.startObject("context");
         for (Context context : annotation.value()) {
             buildContext(contentBuilder, context);
         }
-        contentBuilder.endArray();
+        contentBuilder.endObject();
     }
 
     private static void buildContext(XContentBuilder contentBuilder, Context annotation) throws IOException {
-        contentBuilder.startObject();
+        contentBuilder.startObject(annotation.name());
         contentBuilder.field("type", annotation.type().name().toLowerCase());
         contentBuilder.field("path", annotation.path());
         contentBuilder.endObject();

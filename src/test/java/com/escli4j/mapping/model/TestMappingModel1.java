@@ -33,16 +33,16 @@ public class TestMappingModel1 {
     public String field5;
 
     @Field(dataType = DataType.COMPLETION)
-    @Contexts({ @Context(type = ContextType.CATEGORY, path = "cat"),
-            @Context(type = ContextType.GEO, path = "geo") })
+    @Contexts({ @Context(name = "catName", type = ContextType.CATEGORY, path = "cat"),
+            @Context(name = "geoName", type = ContextType.GEO, path = "geo") })
     public String field6;
     public String cat;
     public String geo;
 
     @Field(dataType = DataType.STRING, index = Index.NOT_ANALYZED,
             fields = { @InnerField(name = "suggest", dataType = DataType.COMPLETION) })
-    @Contexts({ @Context(type = ContextType.CATEGORY, path = "cat"),
-            @Context(type = ContextType.GEO, path = "geo") })
+    @Contexts({ @Context(name = "catName", type = ContextType.CATEGORY, path = "cat"),
+            @Context(name = "geoName", type = ContextType.GEO, path = "geo") })
     public String field7;
 
 }

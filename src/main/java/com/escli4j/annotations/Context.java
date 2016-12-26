@@ -17,6 +17,12 @@ public @interface Context{
     }
 
     /**
+     * Name of the context
+     * @return name of the context
+     */
+    String name();
+
+    /**
      * Type of the context
      * @return type of the context
      */
