@@ -55,12 +55,10 @@
                   "type":"completion",
                   "contexts":[
                      {
-                        "name":"catName",
                         "type":"category",
                         "path":"cat"
                      },
                      {
-                        "name":"geoName",
                         "type":"geo",
                         "path":"geo"
                      }

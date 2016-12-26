@@ -93,7 +93,6 @@ public class MappingUtils {
 
     private static void buildContext(XContentBuilder contentBuilder, Context annotation) throws IOException {
         contentBuilder.startObject();
-        contentBuilder.field("name", annotation.name());
         contentBuilder.field("type", annotation.type().name().toLowerCase());
         contentBuilder.field("path", annotation.path());
         contentBuilder.endObject();
