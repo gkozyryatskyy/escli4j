@@ -280,7 +280,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * when the total number of shards the write succeeded on more than 0.
      * @param objs objects to update
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
-     * when the result of the successful shards > 0
+     * when the result of the successful shards more than 0
      * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
@@ -294,7 +294,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
-     * when the result of the successful shards > 0
+     * when the result of the successful shards more than 0
      * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, boolean refresh, boolean docAsUpsert, Consumer<List<T>> function,

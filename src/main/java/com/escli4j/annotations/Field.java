@@ -8,6 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import com.escli4j.mapping.DataType;
+import com.escli4j.mapping.Index;
 
 @Inherited
 @Documented
@@ -20,12 +21,18 @@ public @interface Field{
      * @return data type
      */
     DataType dataType() default DataType.NONE;
-    
+
     /**
      * doc_values parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/doc-values.html
      * @return data type
      */
     boolean docValues() default true;
+
+    /**
+     * index parameter support https://www.elastic.co/guide/en/elasticsearch/reference/2.3/mapping-index.html
+     * @return data type
+     */
+    Index index() default Index.NONE;
 
     /**
      * fields parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html

@@ -2,27 +2,30 @@
    "test":{
       "properties":{
          "field1":{
-            "type":"text"
+            "type":"string"
          },
          "field2":{
-            "type":"keyword"
+            "type": "string",
+          	"index": "not_analyzed"
          },
          "field3":{
             "type":"object",
             "properties":{
                "field5":{
-                  "type":"text"
+                  "type":"string"
                },
                "field6":{
-                  "type":"keyword"
+                  "type": "string",
+          		  "index": "not_analyzed"
                }
             }
          },
          "field4":{
-            "type":"keyword",
+            "type": "string",
+          	"index": "not_analyzed",
             "fields":{
                "indexes":{
-                  "type":"text"
+                  "type":"string"
                }
             }
          },
@@ -31,7 +34,7 @@
          },
          "field6":{
             "type":"completion",
-            "contexts":[
+            "constrings":[
                {
                   "name":"catName",
                   "type":"category",
@@ -45,7 +48,8 @@
             ]
          },
          "field7":{
-            "type":"keyword",
+            "type": "string",
+          	"index": "not_analyzed",
             "fields":{
                "suggest":{
                   "type":"completion",

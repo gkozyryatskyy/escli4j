@@ -5,11 +5,11 @@ import com.escli4j.mapping.DataType;
 
 public class ParrentMappingModel2 {
 
-    @Field(dataType = DataType.TEXT)
+    @Field(dataType = DataType.STRING)
     public String parrentField1;
-    @Field(dataType = DataType.TEXT)
+    @Field(dataType = DataType.STRING)
     public String parrentField2;
-    @Field(dataType = DataType.TEXT)
+    @Field(dataType = DataType.STRING)
     public String parrentField3;
     public String parrentField4;
 }

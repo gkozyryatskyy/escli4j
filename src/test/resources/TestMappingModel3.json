@@ -5,7 +5,7 @@
       },
       "properties":{
          "field1":{
-            "type":"text"
+            "type":"string"
          }
       }
    }

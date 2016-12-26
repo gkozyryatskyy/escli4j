@@ -136,7 +136,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     /**
      * @param objs objects to update
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
-     * successful shards > 0
+     * successful shards more than 0
      */
     public List<T> update(List<T> objs) {
         return update(objs, false, true);
@@ -147,7 +147,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
-     * successful shards > 0
+     * successful shards more than 0
      */
     public List<T> update(List<T> objs, boolean refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();

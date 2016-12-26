@@ -52,6 +52,8 @@ public class MappingUtils {
             buildType(contentBuilder, field, fieldType, fieldAnnotation.dataType(), field.getName());
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
+            // ------------ process index -----------------
+            buildIndex(contentBuilder, fieldAnnotation.index());
             // ------------ process fields -----------------
             buildFields(contentBuilder, field, fieldType, fieldAnnotation.fields());
             contentBuilder.endObject();
@@ -102,6 +104,12 @@ public class MappingUtils {
             contentBuilder.field("doc_values", false);
         }
     }
+    
+    private static void buildIndex(XContentBuilder contentBuilder, Index index) throws IOException {
+        if (Index.NONE != index) {
+            contentBuilder.field("index", index.name().toLowerCase());
+        }
+    }
 
     private static void buildFields(XContentBuilder contentBuilder, Field field, Class<?> javaType,
             InnerField[] innerFields) throws IOException {
@@ -113,6 +121,8 @@ public class MappingUtils {
                 buildType(contentBuilder, field, javaType, innerField.dataType(), innerField.name());
                 // ------------ process docValues -----------------
                 buildDocValues(contentBuilder, innerField.docValues());
+                // ------------ process index -----------------
+                buildIndex(contentBuilder, innerField.index());
                 contentBuilder.endObject();
             }
             contentBuilder.endObject();

@@ -171,7 +171,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * Update documents
      * @param objs objects to update
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
-     * successful shards > 0
+     * successful shards more than 0
      */
     public List<T> update(List<T> objs) {
         return update(objs, false, true);
@@ -183,7 +183,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
      * @return <strong>new</strong> array of objects that was updated/created. Consider object updated when the result
-     * of the successful shards > 0
+     * of the successful shards more than 0
      */
     public List<T> update(List<T> objs, boolean refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();
