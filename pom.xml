@@ -29,6 +29,7 @@
 		
         <log4j.version>2.7</log4j.version>
         <junit.version>4.12</junit.version>
+        <!-- using 2.7.8 because elasticsearch has conflicts with 2.8+ versions -->
         <jackson.version>2.7.8</jackson.version>
         <reflections.version>0.9.10</reflections.version>
         <es.version>2.3.5</es.version>
