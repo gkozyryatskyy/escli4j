@@ -2,17 +2,16 @@
    "test":{
       "properties":{
          "field1":{
-            "type":"string"
+            "type":"text"
          },
          "field2":{
             "type":"nested",
             "properties":{
                "field4":{
-                  "type": "string",
-          		  "index": "not_analyzed",
+                  "type":"keyword",
                   "fields":{
                      "indexed":{
-                        "type":"string"
+                        "type":"text"
                      }
                   }
                }
@@ -22,11 +21,10 @@
             "type":"nested",
             "properties":{
                "field4":{
-                  "type": "string",
-          		  "index": "not_analyzed",
+                  "type":"keyword",
                   "fields":{
                      "indexed":{
-                        "type":"string"
+                        "type":"text"
                      }
                   }
                }

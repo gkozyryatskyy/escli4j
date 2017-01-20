@@ -7,9 +7,9 @@ import org.elasticsearch.action.ActionListener;
 public class ActionHandler<T> implements ActionListener<T> {
 
     private Consumer<T> responseFunction;
-    private Consumer<Throwable> failFunction;
+    private Consumer<Exception> failFunction;
 
-    public ActionHandler(Consumer<T> responseFunction, Consumer<Throwable> failFunction) {
+    public ActionHandler(Consumer<T> responseFunction, Consumer<Exception> failFunction) {
         this.responseFunction = responseFunction;
         this.failFunction = failFunction;
     }
@@ -20,7 +20,7 @@ public class ActionHandler<T> implements ActionListener<T> {
     }
 
     @Override
-    public void onFailure(Throwable e) {
+    public void onFailure(Exception e) {
         failFunction.accept(e);
     }
 

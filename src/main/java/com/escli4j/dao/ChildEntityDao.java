@@ -3,6 +3,7 @@ package com.escli4j.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -10,6 +11,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.Client;
 
 import com.escli4j.model.EsChildEntity;
@@ -40,7 +42,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @return same object with id
      */
     public T create(T obj) {
-        return create(obj, false);
+        return create(obj, RefreshPolicy.NONE);
     }
 
     /**
@@ -49,8 +51,8 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param refresh refresh index configuration
      * @return same object with id
      */
-    public T create(T obj, boolean refresh) {
-        IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefresh(refresh)
+    public T create(T obj, RefreshPolicy refresh) {
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
                 .setSource(JsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
             req.setOpType(OpType.CREATE);
@@ -66,7 +68,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @return same objects with ids
      */
     public List<T> create(List<T> objs) {
-        return create(objs, false);
+        return create(objs, RefreshPolicy.NONE);
     }
 
     /**
@@ -75,9 +77,9 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param refresh refresh index configuration
      * @return same objects with ids
      */
-    public List<T> create(List<T> objs, boolean refresh) {
+    public List<T> create(List<T> objs, RefreshPolicy refresh) {
         if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent())
                         .setSource(JsonUtils.writeValueAsBytes(obj));
@@ -115,10 +117,10 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     /**
      * Update document
      * @param obj object to update
-     * @return successful shards number
+     * @return result of the update request
      */
-    public int update(T obj) {
-        return update(obj, false, true);
+    public Result update(T obj) {
+        return update(obj, RefreshPolicy.NONE, true);
     }
 
     /**
@@ -126,20 +128,20 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param obj object to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return successful shards number
+     * @return result of the update request
      */
-    public int update(T obj, boolean refresh, boolean docAsUpsert) {
-        return prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefresh(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).get().getShardInfo().getSuccessful();
+    public Result update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
+        return prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
+                .setDocAsUpsert(docAsUpsert).setDoc(JsonUtils.writeValueAsBytes(obj)).get().getResult();
     }
 
     /**
      * @param objs objects to update
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
-     * successful shards more than 0
+     * update request is UPDATED
      */
     public List<T> update(List<T> objs) {
-        return update(objs, false, true);
+        return update(objs, RefreshPolicy.NONE, true);
     }
 
     /**
@@ -147,19 +149,19 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
-     * successful shards more than 0
+     * update request is UPDATED
      */
-    public List<T> update(List<T> objs, boolean refresh, boolean docAsUpsert) {
+    public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();
         if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 bulk.add(prepareUpdate(obj.getId()).setParent(obj.getParent()).setDocAsUpsert(docAsUpsert)
                         .setDoc(JsonUtils.writeValueAsBytes(obj)));
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                if (item.getResponse().getResult() == Result.UPDATED) {
                     retval.add(objs.get(item.getItemId()));
                 }
             }
@@ -173,8 +175,8 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param parentId parent document id
      * @return result of the delete request
      */
-    public boolean delete(String id, String parentId) {
-        return delete(id, parentId, false);
+    public Result delete(String id, String parentId) {
+        return delete(id, parentId, RefreshPolicy.NONE);
     }
 
     /**
@@ -184,7 +186,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param refresh refresh index configuration
      * @return result of the delete request
      */
-    public boolean delete(String id, String parentId, boolean refresh) {
-        return prepareDelete(id).setParent(parentId).setRefresh(refresh).get().isFound();
+    public Result delete(String id, String parentId, RefreshPolicy refresh) {
+        return prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).get().getResult();
     }
 }

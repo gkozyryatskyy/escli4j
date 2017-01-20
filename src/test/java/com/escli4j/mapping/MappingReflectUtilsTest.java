@@ -49,6 +49,7 @@ public class MappingReflectUtilsTest {
         Assert.assertEquals(classes.toString(), 0, classes.size());
     }
 
+    @Test
     public void getAllAnnotatedFieldsTest() {
         List<Field> fields = MappingReflectUtils.getAllAnnotatedFields(SubMappingModel2.class,
                 com.escli4j.annotations.Field.class);

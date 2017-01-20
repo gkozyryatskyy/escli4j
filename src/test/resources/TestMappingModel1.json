@@ -2,30 +2,27 @@
    "test":{
       "properties":{
          "field1":{
-            "type":"string"
+            "type":"text"
          },
          "field2":{
-            "type": "string",
-          	"index": "not_analyzed"
+            "type":"keyword"
          },
          "field3":{
             "type":"object",
             "properties":{
                "field5":{
-                  "type":"string"
+                  "type":"text"
                },
                "field6":{
-                  "type": "string",
-          		  "index": "not_analyzed"
+                  "type":"keyword"
                }
             }
          },
          "field4":{
-            "type": "string",
-          	"index": "not_analyzed",
+            "type":"keyword",
             "fields":{
                "indexes":{
-                  "type":"string"
+                  "type":"text"
                }
             }
          },
@@ -34,33 +31,36 @@
          },
          "field6":{
             "type":"completion",
-            "context":{
-               "catName":{
+            "contexts":[
+               {
+                  "name":"catName",
                   "type":"category",
                   "path":"cat"
                },
-               "geoName":{
+               {
+                  "name":"geoName",
                   "type":"geo",
                   "path":"geo"
                }
-            }
+            ]
          },
          "field7":{
-            "type": "string",
-          	"index": "not_analyzed",
+            "type":"keyword",
             "fields":{
                "suggest":{
                   "type":"completion",
-                  "context":{
-                     "catName":{
+                  "contexts":[
+                     {
+                        "name":"catName",
                         "type":"category",
                         "path":"cat"
                      },
-                     "geoName":{
+                     {
+                        "name":"geoName",
                         "type":"geo",
                         "path":"geo"
                      }
-                  }
+                  ]
                }
             }
          }

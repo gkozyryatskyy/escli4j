@@ -7,7 +7,7 @@ import com.escli4j.mapping.DataType;
 @Type(index = "test", type = "testChild", parent = "test")
 public class TestMappingModel3 {
     
-    @Field(dataType = DataType.STRING)
+    @Field(dataType = DataType.TEXT)
     public String field1;
 
 }

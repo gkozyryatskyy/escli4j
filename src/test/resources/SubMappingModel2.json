@@ -2,22 +2,22 @@
    "test":{
       "properties":{
          "subField1":{
-            "type":"string"
+            "type":"text"
          },
          "subField2":{
-            "type":"string"
+            "type":"text"
          },
          "subField3":{
-            "type":"string"
+            "type":"text"
          },
          "parrentField1":{
-            "type":"string"
+            "type":"text"
          },
          "parrentField2":{
-            "type":"string"
+            "type":"text"
          },
          "parrentField3":{
-            "type":"string"
+            "type":"text"
          }
       }
    }

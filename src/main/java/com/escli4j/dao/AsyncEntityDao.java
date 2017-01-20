@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -21,6 +21,7 @@ import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 
@@ -39,7 +40,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets true if object exists
      * @param errorFunction callback gets exception on failure
      */
-    public void isExist(String id, Consumer<Boolean> function, Consumer<Throwable> errorFunction) {
+    public void isExist(String id, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
         prepareGet(id).execute(new ActionListener<GetResponse>() {
 
             @Override
@@ -48,7 +49,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
             }
 
             @Override
-            public void onFailure(Throwable e) {
+            public void onFailure(Exception e) {
                 errorFunction.accept(e);
             }
 
@@ -61,7 +62,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids document id
      */
-    public void isExist(Consumer<Set<String>> function, Consumer<Throwable> errorFunction, String... ids) {
+    public void isExist(Consumer<Set<String>> function, Consumer<Exception> errorFunction, String... ids) {
         if (ids.length > 0) {
             MultiGetRequestBuilder bulk = prepareMultiGet(ids);
             bulk.execute(new ActionListener<MultiGetResponse>() {
@@ -79,7 +80,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
                 @Override
-                public void onFailure(Throwable e) {
+                public void onFailure(Exception e) {
                     errorFunction.accept(e);
                 }
 
@@ -95,8 +96,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets created document
      * @param errorFunction callback gets exception on failure
      */
-    public void create(T obj, Consumer<T> function, Consumer<Throwable> errorFunction) {
-        create(obj, false, function, errorFunction);
+    public void create(T obj, Consumer<T> function, Consumer<Exception> errorFunction) {
+        create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
     /**
@@ -106,8 +107,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets created document
      * @param errorFunction callback gets exception on failure
      */
-    public void create(T obj, boolean refresh, Consumer<T> function, Consumer<Throwable> errorFunction) {
-        IndexRequestBuilder req = prepareIndex(obj.getId()).setRefresh(refresh)
+    public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
                 .setSource(JsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
             req.setOpType(OpType.CREATE);
@@ -121,7 +122,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
             }
 
             @Override
-            public void onFailure(Throwable e) {
+            public void onFailure(Exception e) {
                 errorFunction.accept(e);
             }
 
@@ -134,8 +135,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets same objects with ids
      * @param errorFunction callback gets exception on failure
      */
-    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
-        create(obj, false, function, errorFunction);
+    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+        create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
     /**
@@ -145,9 +146,10 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets same objects with ids
      * @param errorFunction callback gets exception on failure
      */
-    public void create(List<T> objs, boolean refresh, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
+    public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
+            Consumer<Exception> errorFunction) {
         if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 IndexRequestBuilder req = prepareIndex(obj.getId()).setSource(JsonUtils.writeValueAsBytes(obj));
                 if (obj.getId() != null) {
@@ -167,7 +169,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
                 @Override
-                public void onFailure(Throwable e) {
+                public void onFailure(Exception e) {
                     errorFunction.accept(e);
                 }
 
@@ -181,7 +183,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets document with id
      * @param errorFunction callback gets exception on failure
      */
-    public void get(String id, Consumer<T> function, Consumer<Throwable> errorFunction) {
+    public void get(String id, Consumer<T> function, Consumer<Exception> errorFunction) {
         prepareGet(id).execute(new ActionListener<GetResponse>() {
 
             @Override
@@ -196,7 +198,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
             }
 
             @Override
-            public void onFailure(Throwable e) {
+            public void onFailure(Exception e) {
                 errorFunction.accept(e);
             }
 
@@ -209,7 +211,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids documents ids
      */
-    public void get(Consumer<Map<String, T>> function, Consumer<Throwable> errorFunction, String... ids) {
+    public void get(Consumer<Map<String, T>> function, Consumer<Exception> errorFunction, String... ids) {
         if (ids.length > 0) {
             MultiGetRequestBuilder bulk = prepareMultiGet(ids);
             bulk.execute(new ActionListener<MultiGetResponse>() {
@@ -229,7 +231,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
                 @Override
-                public void onFailure(Throwable e) {
+                public void onFailure(Exception e) {
                     errorFunction.accept(e);
                 }
 
@@ -242,11 +244,11 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
     /**
      * Asynchronous update document
      * @param obj object to update
-     * @param function callback gets successful shards number
+     * @param function callback gets result of the update request
      * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, IntConsumer function, Consumer<Throwable> errorFunction) {
-        update(obj, false, true, function, errorFunction);
+    public void update(T obj, Consumer<Result> function, Consumer<Exception> errorFunction) {
+        update(obj, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
     /**
@@ -254,21 +256,21 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param obj object to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @param function callback gets successful shards number
+     * @param function callback gets result of the update request
      * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, boolean refresh, boolean docAsUpsert, IntConsumer function,
-            Consumer<Throwable> errorFunction) {
-        prepareUpdate(obj.getId()).setRefresh(refresh).setDocAsUpsert(docAsUpsert)
+    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Result> function,
+            Consumer<Exception> errorFunction) {
+        prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
                 .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
                     @Override
                     public void onResponse(UpdateResponse response) {
-                        function.accept(response.getShardInfo().getSuccessful());
+                        function.accept(response.getResult());
                     }
 
                     @Override
-                    public void onFailure(Throwable e) {
+                    public void onFailure(Exception e) {
                         errorFunction.accept(e);
                     }
 
@@ -280,11 +282,11 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * when the total number of shards the write succeeded on more than 0.
      * @param objs objects to update
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
-     * when the result of the successful shards more than 0
+     * when the result of the update request is UPDATED
      * @param errorFunction callback gets exception on failure
      */
-    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
-        update(objs, false, true, function, errorFunction);
+    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+        update(objs, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
     /**
@@ -294,13 +296,13 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
-     * when the result of the successful shards more than 0
+     * when the result of the update request is UPDATED
      * @param errorFunction callback gets exception on failure
      */
-    public void update(List<T> objs, boolean refresh, boolean docAsUpsert, Consumer<List<T>> function,
-            Consumer<Throwable> errorFunction) {
+    public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
+            Consumer<Exception> errorFunction) {
         if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 bulk.add(prepareUpdate(obj.getId()).setDocAsUpsert(docAsUpsert)
                         .setDoc(JsonUtils.writeValueAsBytes(obj)));
@@ -311,7 +313,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 public void onResponse(BulkResponse response) {
                     ArrayList<T> retval = new ArrayList<>();
                     for (BulkItemResponse item : response.getItems()) {
-                        if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                        if (item.getResponse().getResult() == Result.UPDATED) {
                             retval.add(objs.get(item.getItemId()));
                         }
                     }
@@ -319,7 +321,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
                 @Override
-                public void onFailure(Throwable e) {
+                public void onFailure(Exception e) {
                     errorFunction.accept(e);
                 }
 
@@ -333,8 +335,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets result of the delete request
      * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, Consumer<Boolean> function, Consumer<Throwable> errorFunction) {
-        delete(id, false, function, errorFunction);
+    public void delete(String id, Consumer<Result> function, Consumer<Exception> errorFunction) {
+        delete(id, RefreshPolicy.NONE, function, errorFunction);
     }
 
     /**
@@ -344,16 +346,16 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets result of the delete request
      * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, boolean refresh, Consumer<Boolean> function, Consumer<Throwable> errorFunction) {
-        prepareDelete(id).setRefresh(refresh).execute(new ActionListener<DeleteResponse>() {
+    public void delete(String id, RefreshPolicy refresh, Consumer<Result> function, Consumer<Exception> errorFunction) {
+        prepareDelete(id).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
             @Override
             public void onResponse(DeleteResponse response) {
-                function.accept(response.isFound());
+                function.accept(response.getResult());
             }
 
             @Override
-            public void onFailure(Throwable e) {
+            public void onFailure(Exception e) {
                 errorFunction.accept(e);
             }
         });
@@ -365,8 +367,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids document ids to delete
      */
-    public void delete(Consumer<Boolean> function, Consumer<Throwable> errorFunction, String... ids) {
-        delete(false, function, errorFunction, ids);
+    public void delete(Consumer<Boolean> function, Consumer<Exception> errorFunction, String... ids) {
+        delete(RefreshPolicy.NONE, function, errorFunction, ids);
     }
 
     /**
@@ -376,11 +378,11 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids document ids to delete
      */
-    public void delete(boolean refresh, Consumer<Boolean> function, Consumer<Throwable> errorFunction,
+    public void delete(RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Exception> errorFunction,
             String... ids) {
 
         if (ids.length > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (String id : ids) {
                 bulk.add(prepareDelete(id));
             }
@@ -396,7 +398,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
                 @Override
-                public void onFailure(Throwable e) {
+                public void onFailure(Exception e) {
                     errorFunction.accept(e);
                 }
             });
