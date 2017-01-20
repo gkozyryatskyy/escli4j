@@ -34,7 +34,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets true if object exists
      * @param errorFunction callback gets exception on failure
      */
-    public void isExist(String id, String parentId, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+    public void isExist(String id, String parentId, Consumer<Boolean> function, Consumer<Throwable> errorFunction) {
         prepareGet(id).setParent(parentId).execute(new ActionListener<GetResponse>() {
 
             @Override
@@ -55,7 +55,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets created document
      * @param errorFunction callback gets exception on failure
      */
-    public void create(T obj, Consumer<T> function, Consumer<Exception> errorFunction) {
+    public void create(T obj, Consumer<T> function, Consumer<Throwable> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -66,7 +66,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets created document
      * @param errorFunction callback gets exception on failure
      */
-    public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
+    public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Throwable> errorFunction) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
                 .setSource(JsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
@@ -94,7 +94,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets same objects with ids
      * @param errorFunction callback gets exception on failure
      */
-    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -106,7 +106,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param errorFunction callback gets exception on failure
      */
     public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
@@ -144,7 +144,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets document with id
      * @param errorFunction callback gets exception on failure
      */
-    public void get(String id, String parentId, Consumer<T> function, Consumer<Exception> errorFunction) {
+    public void get(String id, String parentId, Consumer<T> function, Consumer<Throwable> errorFunction) {
         prepareGet(id).setParent(parentId).execute(new ActionListener<GetResponse>() {
 
             @Override
@@ -173,7 +173,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets result of the delete request
      * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, Consumer<Result> function, Consumer<Exception> errorFunction) {
+    public void update(T obj, Consumer<Result> function, Consumer<Throwable> errorFunction) {
         update(obj, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
@@ -186,7 +186,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param errorFunction callback gets exception on failure
      */
     public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Result> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
                 .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
@@ -211,7 +211,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * when the result of the update request is UPDATED
      * @param errorFunction callback gets exception on failure
      */
-    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
         update(objs, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
@@ -226,7 +226,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
@@ -262,7 +262,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param function callback gets result of the delete request
      * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, String parentId, Consumer<Result> function, Consumer<Exception> errorFunction) {
+    public void delete(String id, String parentId, Consumer<Result> function, Consumer<Throwable> errorFunction) {
         delete(id, parentId, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -275,7 +275,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      * @param errorFunction callback gets exception on failure
      */
     public void delete(String id, String parentId, RefreshPolicy refresh, Consumer<Result> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         prepareDelete(id).setParent(parentId).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
             @Override

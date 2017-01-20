@@ -40,7 +40,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets true if object exists
      * @param errorFunction callback gets exception on failure
      */
-    public void isExist(String id, Consumer<Boolean> function, Consumer<Exception> errorFunction) {
+    public void isExist(String id, Consumer<Boolean> function, Consumer<Throwable> errorFunction) {
         prepareGet(id).execute(new ActionListener<GetResponse>() {
 
             @Override
@@ -62,7 +62,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids document id
      */
-    public void isExist(Consumer<Set<String>> function, Consumer<Exception> errorFunction, String... ids) {
+    public void isExist(Consumer<Set<String>> function, Consumer<Throwable> errorFunction, String... ids) {
         if (ids.length > 0) {
             MultiGetRequestBuilder bulk = prepareMultiGet(ids);
             bulk.execute(new ActionListener<MultiGetResponse>() {
@@ -96,7 +96,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets created document
      * @param errorFunction callback gets exception on failure
      */
-    public void create(T obj, Consumer<T> function, Consumer<Exception> errorFunction) {
+    public void create(T obj, Consumer<T> function, Consumer<Throwable> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -107,7 +107,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets created document
      * @param errorFunction callback gets exception on failure
      */
-    public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Exception> errorFunction) {
+    public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Throwable> errorFunction) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
                 .setSource(JsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
@@ -135,7 +135,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets same objects with ids
      * @param errorFunction callback gets exception on failure
      */
-    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+    public void create(List<T> obj, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
         create(obj, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -147,7 +147,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      */
     public void create(List<T> objs, RefreshPolicy refresh, Consumer<List<T>> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
@@ -183,7 +183,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets document with id
      * @param errorFunction callback gets exception on failure
      */
-    public void get(String id, Consumer<T> function, Consumer<Exception> errorFunction) {
+    public void get(String id, Consumer<T> function, Consumer<Throwable> errorFunction) {
         prepareGet(id).execute(new ActionListener<GetResponse>() {
 
             @Override
@@ -211,7 +211,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids documents ids
      */
-    public void get(Consumer<Map<String, T>> function, Consumer<Exception> errorFunction, String... ids) {
+    public void get(Consumer<Map<String, T>> function, Consumer<Throwable> errorFunction, String... ids) {
         if (ids.length > 0) {
             MultiGetRequestBuilder bulk = prepareMultiGet(ids);
             bulk.execute(new ActionListener<MultiGetResponse>() {
@@ -247,7 +247,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets result of the update request
      * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, Consumer<Result> function, Consumer<Exception> errorFunction) {
+    public void update(T obj, Consumer<Result> function, Consumer<Throwable> errorFunction) {
         update(obj, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
@@ -260,7 +260,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      */
     public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Result> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
                 .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
@@ -285,7 +285,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * when the result of the update request is UPDATED
      * @param errorFunction callback gets exception on failure
      */
-    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Exception> errorFunction) {
+    public void update(List<T> objs, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
         update(objs, RefreshPolicy.NONE, true, function, errorFunction);
     }
 
@@ -300,7 +300,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
-            Consumer<Exception> errorFunction) {
+            Consumer<Throwable> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
@@ -335,7 +335,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets result of the delete request
      * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, Consumer<Result> function, Consumer<Exception> errorFunction) {
+    public void delete(String id, Consumer<Result> function, Consumer<Throwable> errorFunction) {
         delete(id, RefreshPolicy.NONE, function, errorFunction);
     }
 
@@ -346,7 +346,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets result of the delete request
      * @param errorFunction callback gets exception on failure
      */
-    public void delete(String id, RefreshPolicy refresh, Consumer<Result> function, Consumer<Exception> errorFunction) {
+    public void delete(String id, RefreshPolicy refresh, Consumer<Result> function, Consumer<Throwable> errorFunction) {
         prepareDelete(id).setRefreshPolicy(refresh).execute(new ActionListener<DeleteResponse>() {
 
             @Override
@@ -367,7 +367,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids document ids to delete
      */
-    public void delete(Consumer<Boolean> function, Consumer<Exception> errorFunction, String... ids) {
+    public void delete(Consumer<Boolean> function, Consumer<Throwable> errorFunction, String... ids) {
         delete(RefreshPolicy.NONE, function, errorFunction, ids);
     }
 
@@ -378,7 +378,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      * @param ids document ids to delete
      */
-    public void delete(RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Exception> errorFunction,
+    public void delete(RefreshPolicy refresh, Consumer<Boolean> function, Consumer<Throwable> errorFunction,
             String... ids) {
 
         if (ids.length > 0) {
