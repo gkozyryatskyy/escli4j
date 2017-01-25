@@ -3,6 +3,7 @@ package com.escli4j.dao;
 import com.escli4j.model.EsEntity;
 import com.escli4j.util.JsonUtils;
 
+import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -13,6 +14,7 @@ import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +56,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @return same object with id
      */
     public T create(T obj) {
-        return create(obj, false);
+        return create(obj, RefreshPolicy.NONE);
     }
 
     /**
@@ -63,8 +65,8 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param refresh refresh index configuration
      * @return same object with id
      */
-    public T create(T obj, boolean refresh) {
-        IndexRequestBuilder req = prepareIndex(obj.getId()).setRefresh(refresh)
+    public T create(T obj, RefreshPolicy refresh) {
+        IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
                 .setSource(JsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
             req.setOpType(OpType.CREATE);
@@ -80,7 +82,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @return same objects with ids
      */
     public List<T> create(List<T> objs) {
-        return create(objs, false);
+        return create(objs, RefreshPolicy.NONE);
     }
 
     /**
@@ -89,9 +91,9 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param refresh refresh index configuration
      * @return same objects with ids
      */
-    public List<T> create(List<T> objs, boolean refresh) {
+    public List<T> create(List<T> objs, RefreshPolicy refresh) {
         if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 IndexRequestBuilder req = prepareIndex(obj.getId()).setSource(JsonUtils.writeValueAsBytes(obj));
                 if (obj.getId() != null) {
@@ -149,10 +151,10 @@ public class EntityDao<T extends EsEntity> extends Dao {
     /**
      * Update document
      * @param obj object to update
-     * @return successful shards number
+     * @return result of the update request
      */
-    public int update(T obj) {
-        return update(obj, false, true);
+    public Result update(T obj) {
+        return update(obj, RefreshPolicy.NONE, true);
     }
 
     /**
@@ -160,21 +162,21 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param obj object to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return successful shards number
+     * @return result of the update request
      */
-    public int update(T obj, boolean refresh, boolean docAsUpsert) {
-        return prepareUpdate(obj.getId()).setRefresh(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).get().getShardInfo().getSuccessful();
+    public Result update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
+        return prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
+                .setDoc(JsonUtils.writeValueAsBytes(obj)).get().getResult();
     }
 
     /**
      * Update documents
      * @param objs objects to update
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
-     * successful shards more than 0
+     * update request is UPDATED
      */
     public List<T> update(List<T> objs) {
-        return update(objs, false, true);
+        return update(objs, RefreshPolicy.NONE, true);
     }
 
     /**
@@ -182,20 +184,20 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param objs objects to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return <strong>new</strong> array of objects that was updated/created. Consider object updated when the result
-     * of the successful shards more than 0
+     * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
+     * update request is UPDATED
      */
-    public List<T> update(List<T> objs, boolean refresh, boolean docAsUpsert) {
+    public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert) {
         ArrayList<T> retval = new ArrayList<>();
         if (objs.size() > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 bulk.add(prepareUpdate(obj.getId()).setDocAsUpsert(docAsUpsert)
                         .setDoc(JsonUtils.writeValueAsBytes(obj)));
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                if (item.getResponse().getShardInfo().getSuccessful() > 0) {
+                if (item.getResponse().getResult() == Result.UPDATED) {
                     retval.add(objs.get(item.getItemId()));
                 }
             }
@@ -208,8 +210,8 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param id document id to delete
      * @return result of the delete request
      */
-    public boolean delete(String id) {
-        return delete(id, false);
+    public Result delete(String id) {
+        return delete(id, RefreshPolicy.NONE);
     }
 
     /**
@@ -218,8 +220,8 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param refresh refresh index configuration
      * @return result of the delete request
      */
-    public boolean delete(String id, boolean refresh) {
-        return prepareDelete(id).setRefresh(refresh).get().isFound();
+    public Result delete(String id, RefreshPolicy refresh) {
+        return prepareDelete(id).setRefreshPolicy(refresh).get().getResult();
     }
 
     /**
@@ -228,7 +230,7 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @return true if all documents deleted
      */
     public boolean delete(String... ids) {
-        return delete(false, ids);
+        return delete(RefreshPolicy.NONE, ids);
     }
 
     /**
@@ -237,16 +239,16 @@ public class EntityDao<T extends EsEntity> extends Dao {
      * @param ids document ids to delete
      * @return true if all documents deleted
      */
-    public boolean delete(boolean refresh, String... ids) {
+    public boolean delete(RefreshPolicy refresh, String... ids) {
         boolean retval = true;
         if (ids.length > 0) {
-            BulkRequestBuilder bulk = prepareBulk().setRefresh(refresh);
+            BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (String id : ids) {
                 bulk.add(prepareDelete(id));
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                retval &= !item.isFailed();
+                retval &= item.getResponse().getResult() == Result.DELETED;
             }
         }
         return retval;

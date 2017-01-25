@@ -52,8 +52,6 @@ public class MappingUtils {
             buildType(contentBuilder, field, fieldType, fieldAnnotation.dataType(), field.getName());
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
-            // ------------ process index -----------------
-            buildIndex(contentBuilder, fieldAnnotation.index());
             // ------------ process fields -----------------
             buildFields(contentBuilder, field, fieldType, fieldAnnotation.fields());
             contentBuilder.endObject();
@@ -84,15 +82,16 @@ public class MappingUtils {
     }
 
     private static void buildContexts(XContentBuilder contentBuilder, Contexts annotation) throws IOException {
-        contentBuilder.startObject("context");
+        contentBuilder.startArray("contexts");
         for (Context context : annotation.value()) {
             buildContext(contentBuilder, context);
         }
-        contentBuilder.endObject();
+        contentBuilder.endArray();
     }
 
     private static void buildContext(XContentBuilder contentBuilder, Context annotation) throws IOException {
-        contentBuilder.startObject(annotation.name());
+        contentBuilder.startObject();
+        contentBuilder.field("name", annotation.name());
         contentBuilder.field("type", annotation.type().name().toLowerCase());
         contentBuilder.field("path", annotation.path());
         contentBuilder.endObject();
@@ -101,12 +100,6 @@ public class MappingUtils {
     private static void buildDocValues(XContentBuilder contentBuilder, boolean docValues) throws IOException {
         if (!docValues) {
             contentBuilder.field("doc_values", false);
-        }
-    }
-    
-    private static void buildIndex(XContentBuilder contentBuilder, Index index) throws IOException {
-        if (Index.NONE != index) {
-            contentBuilder.field("index", index.name().toLowerCase());
         }
     }
 
@@ -120,8 +113,6 @@ public class MappingUtils {
                 buildType(contentBuilder, field, javaType, innerField.dataType(), innerField.name());
                 // ------------ process docValues -----------------
                 buildDocValues(contentBuilder, innerField.docValues());
-                // ------------ process index -----------------
-                buildIndex(contentBuilder, innerField.index());
                 contentBuilder.endObject();
             }
             contentBuilder.endObject();

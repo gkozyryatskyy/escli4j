@@ -20,7 +20,7 @@ public class ActionHandler<T> implements ActionListener<T> {
     }
 
     @Override
-    public void onFailure(Throwable e) {
+    public void onFailure(Exception e) {
         failFunction.accept(e);
     }
 
