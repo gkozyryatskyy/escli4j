@@ -5,7 +5,7 @@
 	<groupId>com.escli4j</groupId>
 	<artifactId>escli4j</artifactId>
 	<!-- x.y.z where z is escli4j version and x.y is elasticsearch client version -->	
-	<version>5.1.3</version>
+	<version>5.2.3</version>
 	<name>anyclip</name>
 
 	<description>
@@ -31,7 +31,7 @@
         <junit.version>4.12</junit.version>
         <jackson.version>2.8.6</jackson.version>
         <reflections.version>0.9.10</reflections.version>
-        <es.version>5.1.2</es.version>
+        <es.version>5.2.1</es.version>
         
 	</properties>
 
