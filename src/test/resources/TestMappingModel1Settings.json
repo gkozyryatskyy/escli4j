@@ -1,19 +1,19 @@
 {
    "analysis":{
       "filter":{
-         "testEdgeNGramFilter":{
+         "test_edge_ngram_filter":{
             "type":"edge_ngram",
             "min_gram":1,
             "max_gram":20
          }
       },
       "analyzer":{
-         "testCustomAnalyzer":{
+         "test_custom_analyzer":{
             "type":"custom",
             "tokenizer":"standard",
             "filter":[
                "lowercase",
-               "testEdgeNGramFilter"
+               "test_edge_ngram_filter"
             ]
          }
       }

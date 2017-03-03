@@ -53,7 +53,7 @@ public class Mapping {
             Class<? extends EsEntity> prev = index.getTypes().put(typeAmmotation.type(),
                     (Class<? extends EsEntity>) clazz);
             if (prev != null) {
-                throw new IllegalStateException("THere is duplicate model classes " + prev + " and " + clazz);
+                throw new IllegalStateException("There is duplicate model classes " + prev + " and " + clazz);
             }
             // fill settings list
             index.getAnnotations().addAll(Arrays.asList(clazz.getAnnotations()));
@@ -95,7 +95,10 @@ public class Mapping {
             }
         }
         // build settings
-        builder.setSettings(MappingUtils.getSettingsBuilder(index.getAnnotations()));
+        String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
+        if (settings != null) {
+            builder.setSettings(settings);
+        }
         // not send get request if execute == false
         return execute && builder.get().isAcknowledged();
     }
@@ -112,6 +115,12 @@ public class Mapping {
                                 .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
                         .get().isAcknowledged();
             }
+        }
+        // TODO update if not exists or something
+        String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
+        if (settings != null) {
+            result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings).get()
+                    .isAcknowledged();
         }
         return execute && result;
     }
