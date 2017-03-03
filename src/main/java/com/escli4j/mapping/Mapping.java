@@ -1,6 +1,7 @@
 package com.escli4j.mapping;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -18,7 +19,7 @@ public class Mapping {
 
     private static final Logger log = LoggerFactory.getLogger(Mapping.class);
     // <index name, <type name, model class>>
-    protected final Map<String, Map<String, Class<? extends EsEntity>>> model = new HashMap<>();
+    protected final Map<String, Index> model = new HashMap<>();
     protected final Client client;
 
     public Mapping(Client client) {
@@ -42,35 +43,38 @@ public class Mapping {
                 }
             }
             // fill indexes map
-            Map<String, Class<? extends EsEntity>> typesMap = model.get(typeAmmotation.index());
-            if (typesMap == null) {
-                typesMap = new HashMap<>();
-                model.put(typeAmmotation.index(), typesMap);
+            Index index = model.get(typeAmmotation.index());
+            if (index == null) {
+                index = new Index(typeAmmotation.index());
+                model.put(typeAmmotation.index(), index);
             }
-            // fill types max
+            // fill types map
             @SuppressWarnings("unchecked")
-            Class<? extends EsEntity> prev = typesMap.put(typeAmmotation.type(), (Class<? extends EsEntity>) clazz);
+            Class<? extends EsEntity> prev = index.getTypes().put(typeAmmotation.type(),
+                    (Class<? extends EsEntity>) clazz);
             if (prev != null) {
                 throw new IllegalStateException("THere is duplicate model classes " + prev + " and " + clazz);
             }
+            // fill settings list
+            index.getAnnotations().addAll(Arrays.asList(clazz.getAnnotations()));
         }
         // save client
         this.client = client;
     }
 
     public void migrate() throws IOException {
-        model.forEach((k, v) -> migrateIndex(k, v));
+        model.forEach((k, v) -> migrateIndex(v));
     }
 
-    private void migrateIndex(String index, Map<String, Class<? extends EsEntity>> typesMap) {
-        if (!isIndexExists(index)) {
-            log.info("{} index not exists, creating...", index);
-            createIndex(index, typesMap);
-            log.info("{} index created.", index);
+    private void migrateIndex(Index indexObject) {
+        if (!isIndexExists(indexObject.getName())) {
+            log.info("{} index not exists, creating...", indexObject.getName());
+            createIndex(indexObject);
+            log.info("{} index created.", indexObject.getName());
         } else {
-            log.info("{} index exists, updating...", index);
-            updateIndex(index, typesMap);
-            log.info("{} index updated.", index);
+            log.info("{} index exists, updating...", indexObject.getName());
+            updateIndex(indexObject);
+            log.info("{} index updated.", indexObject.getName());
         }
     }
 
@@ -78,10 +82,11 @@ public class Mapping {
         return client.admin().indices().prepareExists(index).get().isExists();
     }
 
-    protected boolean createIndex(String index, Map<String, Class<? extends EsEntity>> typesMap) {
-        CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index);
+    protected boolean createIndex(Index index) {
+        CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index.getName());
         boolean execute = false;
-        for (Map.Entry<String, Class<? extends EsEntity>> entry : typesMap.entrySet()) {
+        // build mappings
+        for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
             Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
             if (typeAmmotation.create()) {
                 execute = true;
@@ -89,19 +94,21 @@ public class Mapping {
                         MappingUtils.getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()));
             }
         }
+        // build settings
+        builder.setSettings(MappingUtils.getSettingsBuilder(index.getAnnotations()));
         // not send get request if execute == false
         return execute && builder.get().isAcknowledged();
     }
 
-    protected boolean updateIndex(String index, Map<String, Class<? extends EsEntity>> typesMap) {
+    protected boolean updateIndex(Index index) {
         boolean execute = false;
         boolean result = true;
-        for (Map.Entry<String, Class<? extends EsEntity>> entry : typesMap.entrySet()) {
+        for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
             Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
             if (typeAmmotation.update()) {
                 execute = true;
                 result &= client.admin().indices()
-                        .preparePutMapping(index).setType(entry.getKey()).setSource(MappingUtils
+                        .preparePutMapping(index.getName()).setType(entry.getKey()).setSource(MappingUtils
                                 .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
                         .get().isAcknowledged();
             }

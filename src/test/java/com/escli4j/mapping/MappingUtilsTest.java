@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.Assert;
@@ -48,6 +49,13 @@ public class MappingUtilsTest {
     public void getMappingBuilderChildTest() throws IOException {
         XContentBuilder builder = MappingUtils.getMappingBuilder("testChild", "test", TestMappingModel3.class);
         Assert.assertEquals(readJson("TestMappingModel3.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
+    }
+
+    @Test
+    public void getSettingsBuilderEdgeNgramTest() throws IOException {
+        String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel1.class.getAnnotations()));
+        System.out.println(builder);
+        Assert.assertEquals(readJson("TestMappingModel1Settings.json").replaceAll("\\s+|\\n+|\\t+", ""), builder);
     }
 
 }

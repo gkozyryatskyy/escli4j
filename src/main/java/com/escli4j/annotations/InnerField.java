@@ -17,19 +17,32 @@ public @interface InnerField{
 
     /**
      * Data type of the field. Default is not send, elasticsearch will creates it dynamically
-     * @return data type
+     * @return dataType
      */
     DataType dataType() default DataType.NONE;
 
     /**
-     * doc_values parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/doc-values.html
-     * @return data type
+     * Doc_values parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/doc-values.html
+     * @return docValues
      */
     boolean docValues() default true;
 
     /**
+     * Analyzer parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/analyzer.html
+     * @return analyzer
+     */
+    String analyzer() default "";
+
+    /**
+     * Search_analyzer parameter support
+     * https://www.elastic.co/guide/en/elasticsearch/reference/current/search-analyzer.html
+     * @return search_analyzer
+     */
+    String search_analyzer() default "";
+
+    /**
      * Name of the inner field. Default is not send, elasticsearch will creates it dynamically
-     * @return data type
+     * @return name
      */
     String name() default "";
 

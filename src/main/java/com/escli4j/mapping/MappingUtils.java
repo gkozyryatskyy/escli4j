@@ -1,18 +1,66 @@
 package com.escli4j.mapping;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import com.escli4j.annotations.Context;
 import com.escli4j.annotations.Contexts;
+import com.escli4j.annotations.CustomAnalyzer;
+import com.escli4j.annotations.EdgeNGramFilter;
 import com.escli4j.annotations.InnerField;
+import com.escli4j.mapping.model.AnalysisDto;
+import com.escli4j.mapping.model.AnalyzerDto;
+import com.escli4j.mapping.model.CustomAnalyzerDto;
+import com.escli4j.mapping.model.EdgeNGramFilterDto;
+import com.escli4j.mapping.model.FilterDto;
+import com.escli4j.mapping.model.SettingsDto;
+import com.escli4j.util.JsonUtils;
 
 public class MappingUtils {
+
+    ///////////////////////////////// SETTINGS /////////////////////////////////
+
+    public static String getSettingsBuilder(List<Annotation> annotations) {
+        try {
+            SettingsDto settings = new SettingsDto(
+                    new AnalysisDto(buildFilters(annotations), buildAnalyzers(annotations)));
+            return JsonUtils.writeValueAsString(settings);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Map<String, FilterDto> buildFilters(List<Annotation> annotations) throws IOException {
+        Map<String, FilterDto> retval = new HashMap<>();
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof EdgeNGramFilter) {
+                EdgeNGramFilter edgeNGram = (EdgeNGramFilter) annotation;
+                retval.put(edgeNGram.name(), new EdgeNGramFilterDto(edgeNGram));
+            }
+        }
+        return retval;
+    }
+
+    private static Map<String, AnalyzerDto> buildAnalyzers(List<Annotation> annotations) throws IOException {
+        Map<String, AnalyzerDto> retval = new HashMap<>();
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof CustomAnalyzer) {
+                CustomAnalyzer customAnalyzer = (CustomAnalyzer) annotation;
+                retval.put(customAnalyzer.name(), new CustomAnalyzerDto(customAnalyzer));
+            }
+        }
+        return retval;
+    }
+
+    ///////////////////////////////// MAPPINGS /////////////////////////////////
 
     public static XContentBuilder getMappingBuilder(String type, Class<?> model) {
         return getMappingBuilder(type, null, model);
@@ -52,6 +100,10 @@ public class MappingUtils {
             buildType(contentBuilder, field, fieldType, fieldAnnotation.dataType(), field.getName());
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
+            // ------------ process analyzer -----------------
+            buildAnalyzer(contentBuilder, fieldAnnotation.analyzer());
+            // ------------ process search_analyzer -----------------
+            buildSearchAnalyzer(contentBuilder, fieldAnnotation.search_analyzer());
             // ------------ process fields -----------------
             buildFields(contentBuilder, field, fieldType, fieldAnnotation.fields());
             contentBuilder.endObject();
@@ -103,6 +155,18 @@ public class MappingUtils {
         }
     }
 
+    private static void buildAnalyzer(XContentBuilder contentBuilder, String analyzer) throws IOException {
+        if (!"".equals(analyzer)) {
+            contentBuilder.field("analyzer", analyzer);
+        }
+    }
+
+    private static void buildSearchAnalyzer(XContentBuilder contentBuilder, String searchAnalyzer) throws IOException {
+        if (!"".equals(searchAnalyzer)) {
+            contentBuilder.field("search_analyzer", searchAnalyzer);
+        }
+    }
+
     private static void buildFields(XContentBuilder contentBuilder, Field field, Class<?> javaType,
             InnerField[] innerFields) throws IOException {
         if (innerFields.length > 0) {
@@ -111,8 +175,12 @@ public class MappingUtils {
                 contentBuilder.startObject(innerField.name());
                 // ------------ process dataType -----------------
                 buildType(contentBuilder, field, javaType, innerField.dataType(), innerField.name());
-                // ------------ process docValues -----------------
+                // ------------ process doc_values -----------------
                 buildDocValues(contentBuilder, innerField.docValues());
+                // ------------ process analyzer -----------------
+                buildAnalyzer(contentBuilder, innerField.analyzer());
+                // ------------ process search_analyzer -----------------
+                buildSearchAnalyzer(contentBuilder, innerField.search_analyzer());
                 contentBuilder.endObject();
             }
             contentBuilder.endObject();
