@@ -50,11 +50,16 @@ public class MappingUtilsTest {
         XContentBuilder builder = MappingUtils.getMappingBuilder("testChild", "test", TestMappingModel3.class);
         Assert.assertEquals(readJson("TestMappingModel3.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
+    
+    @Test
+    public void getEmptySettingsBuilderTest() throws IOException {
+        String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel2.class.getAnnotations()));
+        Assert.assertEquals("{}", builder);
+    }
 
     @Test
     public void getSettingsBuilderEdgeNgramTest() throws IOException {
         String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel1.class.getAnnotations()));
-        System.out.println(builder);
         Assert.assertEquals(readJson("TestMappingModel1Settings.json").replaceAll("\\s+|\\n+|\\t+", ""), builder);
     }
 
