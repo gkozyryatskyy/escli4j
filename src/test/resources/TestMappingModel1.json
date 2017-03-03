@@ -2,7 +2,9 @@
    "test":{
       "properties":{
          "field1":{
-            "type":"text"
+            "type":"text",
+            "analyzer": "test_analyzer", 
+            "search_analyzer": "test_search_analyzer"
          },
          "field2":{
             "type":"keyword"
@@ -22,7 +24,9 @@
             "type":"keyword",
             "fields":{
                "indexes":{
-                  "type":"text"
+                  "type":"text",
+                  "analyzer": "test_analyzer",
+                  "search_analyzer": "test_search_analyzer"
                }
             }
          },

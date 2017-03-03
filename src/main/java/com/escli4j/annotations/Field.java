@@ -20,16 +20,29 @@ public @interface Field{
      * @return data type
      */
     DataType dataType() default DataType.NONE;
-    
+
     /**
      * doc_values parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/doc-values.html
-     * @return data type
+     * @return docValues
      */
     boolean docValues() default true;
 
     /**
+     * Analyzer parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/analyzer.html
+     * @return analyzer
+     */
+    String analyzer() default "";
+
+    /**
+     * Search_analyzer parameter support
+     * https://www.elastic.co/guide/en/elasticsearch/reference/current/search-analyzer.html
+     * @return search_analyzer
+     */
+    String search_analyzer() default "";
+
+    /**
      * fields parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html
-     * @return data type
+     * @return fields
      */
     InnerField[] fields() default {};
 
