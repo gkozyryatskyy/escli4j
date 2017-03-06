@@ -9,20 +9,24 @@ import com.escli4j.annotations.Field;
 import com.escli4j.annotations.InnerField;
 import com.escli4j.annotations.Type;
 import com.escli4j.mapping.DataType;
+import com.escli4j.model.EsEntity;
 
-@Type(index = "test", type = "test")
-@EdgeNGramFilter(name = "testEdgeNGramFilter")
-@CustomAnalyzer(name = "testCustomAnalyzer", tokenizer = "standard", filter = {"lowercase", "testEdgeNGramFilter"})
-public class TestMappingModel1 {
+@Type(index = "test1", type = "test1", update = true)
+@EdgeNGramFilter(name = "test_edge_ngram_filter")
+@CustomAnalyzer(name = "test_custom_analyzer", tokenizer = "standard",
+        filter = { "lowercase", "test_edge_ngram_filter" })
+public class TestMappingModel1 extends EsEntity {
 
-    @Field(dataType = DataType.TEXT, analyzer = "test_analyzer", search_analyzer = "test_search_analyzer")
+    private static final long serialVersionUID = 6871259440297026084L;
+
+    @Field(dataType = DataType.TEXT, analyzer = "standard", search_analyzer = "standard")
     public String field1;
     @Field(dataType = DataType.KEYWORD)
     public String field2;
     @Field(dataType = DataType.OBJECT)
     public Inner field3;
     @Field(dataType = DataType.KEYWORD, fields = { @InnerField(name = "indexes", dataType = DataType.TEXT,
-            analyzer = "test_analyzer", search_analyzer = "test_search_analyzer") })
+            analyzer = "standard", search_analyzer = "standard") })
     public String field4;
 
     public static class Inner {

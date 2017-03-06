@@ -29,32 +29,32 @@ public class MappingUtilsTest {
 
     @Test
     public void getMappingBuilderTest() throws IOException {
-        XContentBuilder builder = MappingUtils.getMappingBuilder("test", TestMappingModel1.class);
+        XContentBuilder builder = MappingUtils.getMappingBuilder("test1", TestMappingModel1.class);
         Assert.assertEquals(readJson("TestMappingModel1.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
 
     @Test
     public void getMappingBuilderWithParentTest() throws IOException {
-        XContentBuilder builder = MappingUtils.getMappingBuilder("test", SubMappingModel2.class);
+        XContentBuilder builder = MappingUtils.getMappingBuilder("test_sub2", SubMappingModel2.class);
         Assert.assertEquals(readJson("SubMappingModel2.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
 
     @Test
     public void getMappingBuilderNestedArrayTest() throws IOException {
-        XContentBuilder builder = MappingUtils.getMappingBuilder("test", TestMappingModel2.class);
+        XContentBuilder builder = MappingUtils.getMappingBuilder("test2", TestMappingModel2.class);
         Assert.assertEquals(readJson("TestMappingModel2.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
 
     @Test
     public void getMappingBuilderChildTest() throws IOException {
-        XContentBuilder builder = MappingUtils.getMappingBuilder("testChild", "test", TestMappingModel3.class);
+        XContentBuilder builder = MappingUtils.getMappingBuilder("test_child3", "test1", TestMappingModel3.class);
         Assert.assertEquals(readJson("TestMappingModel3.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
     
     @Test
     public void getEmptySettingsBuilderTest() throws IOException {
         String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel2.class.getAnnotations()));
-        Assert.assertEquals("{}", builder);
+        Assert.assertNull(builder);
     }
 
     @Test

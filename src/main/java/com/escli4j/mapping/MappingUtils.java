@@ -32,7 +32,11 @@ public class MappingUtils {
         try {
             SettingsDto settings = new SettingsDto(
                     new AnalysisDto(buildFilters(annotations), buildAnalyzers(annotations)));
-            return JsonUtils.writeValueAsString(settings);
+            if (settings.getAnalysis() == null) {
+                return null;
+            } else {
+                return JsonUtils.writeValueAsString(settings);
+            }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

@@ -1,10 +1,10 @@
 {
-   "testChild":{
+   "test_child3":{
       "_parent":{
-         "type":"test"
+         "type":"test1"
       },
       "properties":{
-         "field1":{
+         "test_child_field1":{
             "type":"text"
          }
       }

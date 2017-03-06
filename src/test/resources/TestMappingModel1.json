@@ -1,10 +1,10 @@
 {
-   "test":{
+   "test1":{
       "properties":{
          "field1":{
             "type":"text",
-            "analyzer": "test_analyzer", 
-            "search_analyzer": "test_search_analyzer"
+            "analyzer": "standard", 
+            "search_analyzer": "standard"
          },
          "field2":{
             "type":"keyword"
@@ -25,8 +25,8 @@
             "fields":{
                "indexes":{
                   "type":"text",
-                  "analyzer": "test_analyzer",
-                  "search_analyzer": "test_search_analyzer"
+                  "analyzer": "standard",
+                  "search_analyzer": "standard"
                }
             }
          },
