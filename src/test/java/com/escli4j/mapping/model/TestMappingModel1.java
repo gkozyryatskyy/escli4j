@@ -11,13 +11,14 @@ import com.escli4j.annotations.Type;
 import com.escli4j.mapping.DataType;
 import com.escli4j.model.EsEntity;
 
-@Type(index = "test1", type = "test1")
+@Type(index = "test1", type = "test1", update = true)
 @EdgeNGramFilter(name = "test_edge_ngram_filter")
-@CustomAnalyzer(name = "test_custom_analyzer", tokenizer = "standard", filter = {"lowercase", "test_edge_ngram_filter"})
+@CustomAnalyzer(name = "test_custom_analyzer", tokenizer = "standard",
+        filter = { "lowercase", "test_edge_ngram_filter" })
 public class TestMappingModel1 extends EsEntity {
 
     private static final long serialVersionUID = 6871259440297026084L;
-    
+
     @Field(dataType = DataType.TEXT, analyzer = "standard", search_analyzer = "standard")
     public String field1;
     @Field(dataType = DataType.KEYWORD)

@@ -95,9 +95,11 @@ public class Mapping {
             }
         }
         // build settings
-        String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
-        if (settings != null) {
-            builder.setSettings(settings);
+        if (execute) {
+            String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
+            if (settings != null) {
+                builder.setSettings(settings);
+            }
         }
         // not send get request if execute == false
         return execute && builder.get().isAcknowledged();
@@ -116,11 +118,27 @@ public class Mapping {
                         .get().isAcknowledged();
             }
         }
-        // TODO update if not exists or something
+        return execute && result;
+    }
+
+    public boolean updateSettings(String index) {
+        return updateSettings(model.get(index));
+    }
+
+    protected boolean updateSettings(Index index) {
+        boolean execute = false;
+        boolean result = true;
         String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
         if (settings != null) {
-            result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings).get()
-                    .isAcknowledged();
+            client.admin().indices().prepareClose(index.getName()).get();
+            try {
+                execute = true;
+                result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings).get()
+                        .isAcknowledged();
+            } catch (IllegalArgumentException e) {
+                log.warn("Some of the settings was not updated. ", e);
+            }
+            client.admin().indices().prepareOpen(index.getName()).get();
         }
         return execute && result;
     }

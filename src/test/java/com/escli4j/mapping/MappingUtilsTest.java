@@ -54,7 +54,7 @@ public class MappingUtilsTest {
     @Test
     public void getEmptySettingsBuilderTest() throws IOException {
         String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel2.class.getAnnotations()));
-        Assert.assertEquals("{}", builder);
+        Assert.assertNull(builder);
     }
 
     @Test
