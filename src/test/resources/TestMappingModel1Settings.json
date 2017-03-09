@@ -15,6 +15,13 @@
                "lowercase",
                "test_edge_ngram_filter"
             ]
+         },
+         "lowercase":{
+            "type":"custom",
+            "tokenizer":"keyword",
+            "filter":[
+               "lowercase"
+            ]
          }
       }
    }

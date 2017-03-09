@@ -15,6 +15,7 @@ import com.escli4j.model.EsEntity;
 @EdgeNGramFilter(name = "test_edge_ngram_filter")
 @CustomAnalyzer(name = "test_custom_analyzer", tokenizer = "standard",
         filter = { "lowercase", "test_edge_ngram_filter" })
+@CustomAnalyzer(name = "lowercase", tokenizer = "keyword", filter = { "lowercase" })
 public class TestMappingModel1 extends EsEntity {
 
     private static final long serialVersionUID = 6871259440297026084L;

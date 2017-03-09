@@ -16,7 +16,11 @@ public class MainTest {
     public static void main(String[] args) throws IOException {
         Client esClient = new PreBuiltTransportClient(Settings.EMPTY)
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
-        new Mapping(esClient);
+        Mapping mapping = new Mapping(esClient);
+        mapping.migrate();
+        System.out.println("migrate");
+        mapping.updateSettings("test1");
+        System.out.println("update settings");
     }
 
 }

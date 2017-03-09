@@ -11,6 +11,7 @@ import java.util.Map;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
+import com.escli4j.annotations.Analyzers;
 import com.escli4j.annotations.Context;
 import com.escli4j.annotations.Contexts;
 import com.escli4j.annotations.CustomAnalyzer;
@@ -56,7 +57,11 @@ public class MappingUtils {
     private static Map<String, AnalyzerDto> buildAnalyzers(List<Annotation> annotations) throws IOException {
         Map<String, AnalyzerDto> retval = new HashMap<>();
         for (Annotation annotation : annotations) {
-            if (annotation instanceof CustomAnalyzer) {
+            if (annotation instanceof Analyzers) {
+                for (CustomAnalyzer customAnalyzer : ((Analyzers) annotation).value()) {
+                    retval.put(customAnalyzer.name(), new CustomAnalyzerDto(customAnalyzer));
+                }
+            } else if (annotation instanceof CustomAnalyzer) {
                 CustomAnalyzer customAnalyzer = (CustomAnalyzer) annotation;
                 retval.put(customAnalyzer.name(), new CustomAnalyzerDto(customAnalyzer));
             }
