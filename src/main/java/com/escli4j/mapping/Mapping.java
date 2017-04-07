@@ -125,6 +125,11 @@ public class Mapping {
         }
         boolean execute = false;
         boolean result = true;
+        String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
+        if (settings != null) {
+            result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings).get()
+                    .isAcknowledged();
+        }
         for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
             Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
             if (typeAmmotation.update()) {
@@ -133,13 +138,6 @@ public class Mapping {
                         .preparePutMapping(indexName).setType(entry.getKey()).setSource(MappingUtils
                                 .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
                         .get().isAcknowledged();
-            }
-        }
-        if (execute) {
-            String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
-            if (settings != null) {
-                result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings).get()
-                        .isAcknowledged();
             }
         }
         return execute && result;
