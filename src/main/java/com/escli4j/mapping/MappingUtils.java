@@ -23,7 +23,7 @@ import com.escli4j.mapping.model.CustomAnalyzerDto;
 import com.escli4j.mapping.model.EdgeNGramFilterDto;
 import com.escli4j.mapping.model.FilterDto;
 import com.escli4j.mapping.model.SettingsDto;
-import com.escli4j.util.JsonUtils;
+import com.escli4j.util.EscliJsonUtils;
 
 public class MappingUtils {
 
@@ -36,7 +36,7 @@ public class MappingUtils {
             if (settings.getAnalysis() == null) {
                 return null;
             } else {
-                return JsonUtils.writeValueAsString(settings);
+                return EscliJsonUtils.writeValueAsString(settings);
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);

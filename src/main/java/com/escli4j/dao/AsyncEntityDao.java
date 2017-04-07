@@ -26,7 +26,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 
 import com.escli4j.model.EsEntity;
-import com.escli4j.util.JsonUtils;
+import com.escli4j.util.EscliJsonUtils;
 
 public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
 
@@ -109,7 +109,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      */
     public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Throwable> errorFunction) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setRefreshPolicy(refresh)
-                .setSource(JsonUtils.writeValueAsBytes(obj));
+                .setSource(EscliJsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
             req.setOpType(OpType.CREATE);
         }
@@ -151,7 +151,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
-                IndexRequestBuilder req = prepareIndex(obj.getId()).setSource(JsonUtils.writeValueAsBytes(obj));
+                IndexRequestBuilder req = prepareIndex(obj.getId()).setSource(EscliJsonUtils.writeValueAsBytes(obj));
                 if (obj.getId() != null) {
                     req.setOpType(OpType.CREATE);
                 }
@@ -189,9 +189,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
             @Override
             public void onResponse(GetResponse response) {
                 if (response.isExists()) {
-                    T obj = JsonUtils.read(response.getSourceAsBytes(), clazz);
-                    obj.setId(response.getId());
-                    function.accept(obj);
+                    function.accept(newObject(response.getSourceAsBytes(), id));
                 } else {
                     function.accept(null);
                 }
@@ -222,9 +220,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                     for (MultiGetItemResponse item : response.getResponses()) {
                         GetResponse resp = item.getResponse();
                         if (resp.isExists()) {
-                            T obj = JsonUtils.read(resp.getSourceAsBytes(), clazz);
-                            obj.setId(resp.getId());
-                            retval.put(resp.getId(), obj);
+                            retval.put(resp.getId(), newObject(resp.getSourceAsBytes(), resp.getId()));
                         }
                     }
                     function.accept(retval);
@@ -247,8 +243,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param function callback gets result of the update request
      * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, Consumer<Result> function, Consumer<Throwable> errorFunction) {
-        update(obj, RefreshPolicy.NONE, true, function, errorFunction);
+    public void update(T obj, Consumer<T> function, Consumer<Throwable> errorFunction) {
+        update(obj, RefreshPolicy.NONE, true, false, function, errorFunction);
     }
 
     /**
@@ -256,17 +252,18 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param obj object to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
+     * @param nullWithNoop return null if there was a noop
      * @param function callback gets result of the update request
      * @param errorFunction callback gets exception on failure
      */
-    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, Consumer<Result> function,
+    public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, boolean nullWithNoop, Consumer<T> function,
             Consumer<Throwable> errorFunction) {
-        prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
-                .setDoc(JsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
+        prepareUpdate(obj.getId()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert).setFetchSource(true)
+                .setDoc(EscliJsonUtils.writeValueAsBytes(obj)).execute(new ActionListener<UpdateResponse>() {
 
                     @Override
                     public void onResponse(UpdateResponse response) {
-                        function.accept(response.getResult());
+                        function.accept(newObject(response.getGetResult().source(), obj.getId()));
                     }
 
                     @Override
@@ -286,7 +283,7 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param errorFunction callback gets exception on failure
      */
     public void update(List<T> objs, Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
-        update(objs, RefreshPolicy.NONE, true, function, errorFunction);
+        update(objs, RefreshPolicy.NONE, true, false, function, errorFunction);
     }
 
     /**
@@ -295,17 +292,18 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
      * @param objs objects to update
      * @param refresh refresh index configuration
      * @param docAsUpsert should this doc be upserted or not
+     * @param nullWithNoop return null if there was a noop
      * @param function callback gets <strong>new</strong> array of objects that was updated. Consider object updated
      * when the result of the update request is UPDATED
      * @param errorFunction callback gets exception on failure
      */
-    public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, Consumer<List<T>> function,
-            Consumer<Throwable> errorFunction) {
+    public void update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, boolean nullWithNoop,
+            Consumer<List<T>> function, Consumer<Throwable> errorFunction) {
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
-                bulk.add(prepareUpdate(obj.getId()).setDocAsUpsert(docAsUpsert)
-                        .setDoc(JsonUtils.writeValueAsBytes(obj)));
+                bulk.add(prepareUpdate(obj.getId()).setDocAsUpsert(docAsUpsert).setFetchSource(true)
+                        .setDoc(EscliJsonUtils.writeValueAsBytes(obj)));
             }
             bulk.execute(new ActionListener<BulkResponse>() {
 
@@ -313,8 +311,14 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 public void onResponse(BulkResponse response) {
                     ArrayList<T> retval = new ArrayList<>();
                     for (BulkItemResponse item : response.getItems()) {
-                        if (item.getResponse().getResult() == Result.UPDATED) {
-                            retval.add(objs.get(item.getItemId()));
+                        UpdateResponse updateResponce = item.getResponse();
+                        T obj = objs.get(item.getItemId());
+                        if (nullWithNoop) {
+                            if (updateResponce.getResult() != Result.NOOP) {
+                                retval.add(newObject(updateResponce.getGetResult().source(), obj.getId()));
+                            }
+                        } else {
+                            retval.add(newObject(updateResponce.getGetResult().source(), obj.getId()));
                         }
                     }
                     function.accept(retval);

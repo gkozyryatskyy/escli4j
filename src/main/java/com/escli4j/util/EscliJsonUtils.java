@@ -7,11 +7,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-public class JsonUtils {
+public class EscliJsonUtils {
 
     private final ObjectMapper json;
 
-    public JsonUtils() {
+    public EscliJsonUtils() {
         json = new ObjectMapper();
         json.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
@@ -68,12 +68,12 @@ public class JsonUtils {
         }
     }
 
-    private static JsonUtils getInstance() {
+    private static EscliJsonUtils getInstance() {
         return InstanceHolder.json;
     }
 
     private static class InstanceHolder {
-        static JsonUtils json = new JsonUtils();
+        static EscliJsonUtils json = new EscliJsonUtils();
 
     }
 

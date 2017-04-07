@@ -12,10 +12,11 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 
 import com.escli4j.model.EsChildEntity;
-import com.escli4j.util.JsonUtils;
+import com.escli4j.util.EscliJsonUtils;
 
 public class ChildEntityDao<T extends EsChildEntity> extends Dao {
 
@@ -24,6 +25,13 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     public ChildEntityDao(Class<T> clazz, Client client) {
         super(clazz, client);
         this.clazz = clazz;
+    }
+
+    protected T newObject(byte[] source, String id, String parentId) {
+        T retval = EscliJsonUtils.read(source, clazz);
+        retval.setId(id);
+        retval.setParent(parentId);
+        return retval;
     }
 
     /**
@@ -53,7 +61,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      */
     public T create(T obj, RefreshPolicy refresh) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
-                .setSource(JsonUtils.writeValueAsBytes(obj));
+                .setSource(EscliJsonUtils.writeValueAsBytes(obj));
         if (obj.getId() != null) {
             req.setOpType(OpType.CREATE);
         }
@@ -82,7 +90,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent())
-                        .setSource(JsonUtils.writeValueAsBytes(obj));
+                        .setSource(EscliJsonUtils.writeValueAsBytes(obj));
                 if (obj.getId() != null) {
                     req.setOpType(OpType.CREATE);
                 }
@@ -105,10 +113,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     public T get(String id, String parentId) {
         GetResponse resp = prepareGet(id).setParent(parentId).get();
         if (resp.isExists()) {
-            T obj = JsonUtils.read(resp.getSourceAsBytes(), clazz);
-            obj.setId(resp.getId());
-            obj.setParent(parentId);
-            return obj;
+            return newObject(resp.getSourceAsBytes(), id, parentId);
         } else {
             return null;
         }
@@ -117,10 +122,10 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     /**
      * Update document
      * @param obj object to update
-     * @return result of the update request
+     * @return updated document
      */
-    public Result update(T obj) {
-        return update(obj, RefreshPolicy.NONE, true);
+    public T update(T obj) {
+        return update(obj, RefreshPolicy.NONE, true, false);
     }
 
     /**
@@ -128,11 +133,21 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * @param obj object to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
-     * @return result of the update request
+     * @param nullWithNoop return null if there was a noop
+     * @return updated document
      */
-    public Result update(T obj, RefreshPolicy refresh, boolean docAsUpsert) {
-        return prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
-                .setDocAsUpsert(docAsUpsert).setDoc(JsonUtils.writeValueAsBytes(obj)).get().getResult();
+    public T update(T obj, RefreshPolicy refresh, boolean docAsUpsert, boolean nullWithNoop) {
+        UpdateResponse response = prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
+                .setDocAsUpsert(docAsUpsert).setFetchSource(true).setDoc(EscliJsonUtils.writeValueAsBytes(obj)).get();
+        if (nullWithNoop) {
+            if (response.getResult() != Result.NOOP) {
+                return newObject(response.getGetResult().source(), obj.getId(), obj.getParent());
+            } else {
+                return null;
+            }
+        } else {
+            return newObject(response.getGetResult().source(), obj.getId(), obj.getParent());
+        }
     }
 
     /**
@@ -141,28 +156,35 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
      * update request is UPDATED
      */
     public List<T> update(List<T> objs) {
-        return update(objs, RefreshPolicy.NONE, true);
+        return update(objs, RefreshPolicy.NONE, true, false);
     }
 
     /**
      * @param objs objects to update
      * @param refresh refresh configuration
      * @param docAsUpsert should this doc be upserted or not
+     * @param nullWithNoop return null if there was a noop
      * @return <strong>new</strong> array of objects that was updated. Consider object updated when the result of the
      * update request is UPDATED
      */
-    public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert) {
+    public List<T> update(List<T> objs, RefreshPolicy refresh, boolean docAsUpsert, boolean nullWithNoop) {
         ArrayList<T> retval = new ArrayList<>();
         if (objs.size() > 0) {
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 bulk.add(prepareUpdate(obj.getId()).setParent(obj.getParent()).setDocAsUpsert(docAsUpsert)
-                        .setDoc(JsonUtils.writeValueAsBytes(obj)));
+                        .setFetchSource(true).setDoc(EscliJsonUtils.writeValueAsBytes(obj)));
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                if (item.getResponse().getResult() == Result.UPDATED) {
-                    retval.add(objs.get(item.getItemId()));
+                UpdateResponse updateResponce = item.getResponse();
+                T obj = objs.get(item.getItemId());
+                if (nullWithNoop) {
+                    if (updateResponce.getResult() != Result.NOOP) {
+                        retval.add(newObject(updateResponce.getGetResult().source(), obj.getId(), obj.getParent()));
+                    }
+                } else {
+                    retval.add(newObject(updateResponce.getGetResult().source(), obj.getId(), obj.getParent()));
                 }
             }
         }

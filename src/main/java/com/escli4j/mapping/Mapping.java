@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,11 +70,11 @@ public class Mapping {
     private void migrateIndex(Index indexObject) {
         if (!isIndexExists(indexObject.getName())) {
             log.info("{} index not exists, creating...", indexObject.getName());
-            createIndex(indexObject);
+            createIndex(indexObject, null);
             log.info("{} index created.", indexObject.getName());
         } else {
             log.info("{} index exists, updating...", indexObject.getName());
-            updateIndex(indexObject);
+            updateIndex(indexObject, null);
             log.info("{} index updated.", indexObject.getName());
         }
     }
@@ -82,8 +83,16 @@ public class Mapping {
         return client.admin().indices().prepareExists(index).get().isExists();
     }
 
-    protected boolean createIndex(Index index) {
-        CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index.getName());
+    public boolean createIndex(String index, String version) {
+        return createIndex(model.get(index), version);
+    }
+
+    protected boolean createIndex(Index index, String version) {
+        String indexName = index.getName();
+        if (!Strings.isEmpty(version)) {
+            indexName = indexName + "_" + version;
+        }
+        CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
         boolean execute = false;
         // build mappings
         for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
@@ -105,7 +114,15 @@ public class Mapping {
         return execute && builder.get().isAcknowledged();
     }
 
-    protected boolean updateIndex(Index index) {
+    public boolean updateIndex(String index, String version) {
+        return updateIndex(model.get(index), version);
+    }
+
+    protected boolean updateIndex(Index index, String version) {
+        String indexName = index.getName();
+        if (!Strings.isEmpty(version)) {
+            indexName = indexName + "_" + version;
+        }
         boolean execute = false;
         boolean result = true;
         for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
@@ -113,32 +130,17 @@ public class Mapping {
             if (typeAmmotation.update()) {
                 execute = true;
                 result &= client.admin().indices()
-                        .preparePutMapping(index.getName()).setType(entry.getKey()).setSource(MappingUtils
+                        .preparePutMapping(indexName).setType(entry.getKey()).setSource(MappingUtils
                                 .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
                         .get().isAcknowledged();
             }
         }
-        return execute && result;
-    }
-
-    public boolean updateSettings(String index) {
-        return updateSettings(model.get(index));
-    }
-
-    protected boolean updateSettings(Index index) {
-        boolean execute = false;
-        boolean result = true;
-        String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
-        if (settings != null) {
-            client.admin().indices().prepareClose(index.getName()).get();
-            try {
-                execute = true;
-                result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings).get()
+        if (execute) {
+            String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
+            if (settings != null) {
+                result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings).get()
                         .isAcknowledged();
-            } catch (IllegalArgumentException e) {
-                log.warn("Some of the settings was not updated. ", e);
             }
-            client.admin().indices().prepareOpen(index.getName()).get();
         }
         return execute && result;
     }

@@ -18,9 +18,7 @@ public class MainTest {
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
         Mapping mapping = new Mapping(esClient);
         mapping.migrate();
-        System.out.println("migrate");
-        mapping.updateSettings("test1");
-        System.out.println("update settings");
+        System.out.println("done");
     }
 
 }
