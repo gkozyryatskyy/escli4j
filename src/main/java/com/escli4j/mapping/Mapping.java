@@ -126,19 +126,42 @@ public class Mapping {
         boolean execute = false;
         boolean result = true;
         String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
-        if (settings != null) {
-            result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings).get()
-                    .isAcknowledged();
-        }
-        for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
-            Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
-            if (typeAmmotation.update()) {
-                execute = true;
-                result &= client.admin().indices()
-                        .preparePutMapping(indexName).setType(entry.getKey()).setSource(MappingUtils
-                                .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
-                        .get().isAcknowledged();
+        try {
+            client.admin().indices().prepareClose(index.getName()).get();
+            if (settings != null) {
+                result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings).get()
+                        .isAcknowledged();
             }
+            for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
+                Type typeAmmotation = entry.getValue().getAnnotation(Type.class);
+                if (typeAmmotation.update()) {
+                    execute = true;
+                    result &= client.admin().indices()
+                            .preparePutMapping(indexName).setType(entry.getKey()).setSource(MappingUtils
+                                    .getMappingBuilder(entry.getKey(), typeAmmotation.parent(), entry.getValue()))
+                            .get().isAcknowledged();
+                }
+            }
+        } finally {
+            client.admin().indices().prepareOpen(index.getName()).get();
+        }
+        return execute && result;
+    }
+
+    protected boolean updateSettings(Index index) {
+        boolean execute = false;
+        boolean result = true;
+        String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
+        if (settings != null) {
+            client.admin().indices().prepareClose(index.getName()).get();
+            try {
+                execute = true;
+                result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings).get()
+                        .isAcknowledged();
+            } catch (IllegalArgumentException e) {
+                log.warn("Some of the settings was not updated. ", e);
+            }
+            client.admin().indices().prepareOpen(index.getName()).get();
         }
         return execute && result;
     }
