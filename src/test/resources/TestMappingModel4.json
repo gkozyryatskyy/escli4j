@@ -1,0 +1,19 @@
+{
+   "test4":{
+      "properties":{
+         "field1":{
+            "type":"text",
+            "fields":{
+               "keyword":{
+                  "type":"keyword",
+                  "normalizer":"lowercase"
+               }
+            }
+         },
+         "field2":{
+            "type":"keyword",
+            "normalizer":"lowercase"
+         }
+      }
+   }
+}
