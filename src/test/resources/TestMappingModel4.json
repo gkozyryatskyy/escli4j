@@ -6,13 +6,13 @@
             "fields":{
                "keyword":{
                   "type":"keyword",
-                  "normalizer":"lowercase"
+                  "normalizer":"test_custom_normalizer"
                }
             }
          },
          "field2":{
             "type":"keyword",
-            "normalizer":"lowercase"
+            "normalizer":"test_custom_normalizer"
          }
       }
    }

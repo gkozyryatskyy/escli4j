@@ -10,18 +10,18 @@
       "analyzer":{
          "test_custom_analyzer":{
             "type":"custom",
-            "tokenizer":"standard",
             "filter":[
                "lowercase",
                "test_edge_ngram_filter"
-            ]
+            ],
+            "tokenizer":"standard"
          },
          "lowercase":{
             "type":"custom",
-            "tokenizer":"keyword",
             "filter":[
                "lowercase"
-            ]
+            ],
+            "tokenizer":"keyword"
          }
       }
    }

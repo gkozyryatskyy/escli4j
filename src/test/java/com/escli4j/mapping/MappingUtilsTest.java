@@ -61,6 +61,8 @@ public class MappingUtilsTest {
     @Test
     public void getSettingsBuilderEdgeNgramTest() throws IOException {
         String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel1.class.getAnnotations()));
+        System.out.println(builder); //TODO
+        System.out.println(readJson("TestMappingModel1Settings.json").replaceAll("\\s+|\\n+|\\t+", "")); //TODO
         Assert.assertEquals(readJson("TestMappingModel1Settings.json").replaceAll("\\s+|\\n+|\\t+", ""), builder);
     }
 
