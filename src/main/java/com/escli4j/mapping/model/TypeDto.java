@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonInclude(Include.NON_NULL)
-public class AnalyzerDto {
+public class TypeDto {
     
     private String type;
 

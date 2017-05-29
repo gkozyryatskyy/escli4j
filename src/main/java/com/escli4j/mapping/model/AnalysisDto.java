@@ -13,15 +13,19 @@ import lombok.Setter;
 @JsonInclude(Include.NON_NULL)
 public class AnalysisDto {
 
-    private Map<String, FilterDto> filter;
-    private Map<String, AnalyzerDto> analyzer;
+    private Map<String, TypeDto> filter;
+    private Map<String, TypeDto> analyzer;
+    private Map<String, TypeDto> normalizer;
 
-    public AnalysisDto(Map<String, FilterDto> filter, Map<String, AnalyzerDto> analyzer) {
+    public AnalysisDto(Map<String, TypeDto> filter, Map<String, TypeDto> analyzer, Map<String, TypeDto> normalizer) {
         if (!filter.isEmpty()) {
             setFilter(filter);
         }
         if (!analyzer.isEmpty()) {
             setAnalyzer(analyzer);
+        }
+        if (!normalizer.isEmpty()) {
+            setNormalizer(normalizer);
         }
     }
 

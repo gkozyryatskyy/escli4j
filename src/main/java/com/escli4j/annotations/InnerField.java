@@ -41,6 +41,12 @@ public @interface InnerField{
     String analyzer() default "";
 
     /**
+     * Normalizer parameter support https://www.elastic.co/guide/en/elasticsearch/reference/master/normalizer.html
+     * @return normalizer
+     */
+    String normalizer() default "";
+
+    /**
      * Search_analyzer parameter support
      * https://www.elastic.co/guide/en/elasticsearch/reference/current/search-analyzer.html
      * @return search_analyzer

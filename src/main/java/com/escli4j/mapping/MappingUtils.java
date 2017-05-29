@@ -15,13 +15,14 @@ import com.escli4j.annotations.Analyzers;
 import com.escli4j.annotations.Context;
 import com.escli4j.annotations.Contexts;
 import com.escli4j.annotations.CustomAnalyzer;
+import com.escli4j.annotations.CustomNormalizer;
 import com.escli4j.annotations.EdgeNGramFilter;
 import com.escli4j.annotations.InnerField;
 import com.escli4j.mapping.model.AnalysisDto;
-import com.escli4j.mapping.model.AnalyzerDto;
 import com.escli4j.mapping.model.CustomAnalyzerDto;
+import com.escli4j.mapping.model.CustomNormalizerDto;
 import com.escli4j.mapping.model.EdgeNGramFilterDto;
-import com.escli4j.mapping.model.FilterDto;
+import com.escli4j.mapping.model.TypeDto;
 import com.escli4j.mapping.model.SettingsDto;
 import com.escli4j.util.EscliJsonUtils;
 
@@ -31,8 +32,7 @@ public class MappingUtils {
 
     public static String getSettingsBuilder(List<Annotation> annotations) {
         try {
-            SettingsDto settings = new SettingsDto(
-                    new AnalysisDto(buildFilters(annotations), buildAnalyzers(annotations)));
+            SettingsDto settings = new SettingsDto(buildAnalysis(annotations));
             if (settings.getAnalysis() == null) {
                 return null;
             } else {
@@ -43,30 +43,41 @@ public class MappingUtils {
         }
     }
 
-    private static Map<String, FilterDto> buildFilters(List<Annotation> annotations) throws IOException {
-        Map<String, FilterDto> retval = new HashMap<>();
+    private static AnalysisDto buildAnalysis(List<Annotation> annotations) throws IOException {
+        Map<String, TypeDto> filter = new HashMap<>();
+        Map<String, TypeDto> analyzer = new HashMap<>();
+        Map<String, TypeDto> normalizer = new HashMap<>();
         for (Annotation annotation : annotations) {
-            if (annotation instanceof EdgeNGramFilter) {
-                EdgeNGramFilter edgeNGram = (EdgeNGramFilter) annotation;
-                retval.put(edgeNGram.name(), new EdgeNGramFilterDto(edgeNGram));
-            }
+            addFilters(annotation, filter);
+            addAnalyzers(annotation, analyzer);
+            addNormalizers(annotation, normalizer);
         }
-        return retval;
+        return new AnalysisDto(filter, analyzer, normalizer);
     }
 
-    private static Map<String, AnalyzerDto> buildAnalyzers(List<Annotation> annotations) throws IOException {
-        Map<String, AnalyzerDto> retval = new HashMap<>();
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof Analyzers) {
-                for (CustomAnalyzer customAnalyzer : ((Analyzers) annotation).value()) {
-                    retval.put(customAnalyzer.name(), new CustomAnalyzerDto(customAnalyzer));
-                }
-            } else if (annotation instanceof CustomAnalyzer) {
-                CustomAnalyzer customAnalyzer = (CustomAnalyzer) annotation;
+    private static void addFilters(Annotation annotation, Map<String, TypeDto> retval) throws IOException {
+        if (annotation instanceof EdgeNGramFilter) {
+            EdgeNGramFilter edgeNGram = (EdgeNGramFilter) annotation;
+            retval.put(edgeNGram.name(), new EdgeNGramFilterDto(edgeNGram));
+        }
+    }
+
+    private static void addAnalyzers(Annotation annotation, Map<String, TypeDto> retval) throws IOException {
+        if (annotation instanceof Analyzers) {
+            for (CustomAnalyzer customAnalyzer : ((Analyzers) annotation).value()) {
                 retval.put(customAnalyzer.name(), new CustomAnalyzerDto(customAnalyzer));
             }
+        } else if (annotation instanceof CustomAnalyzer) {
+            CustomAnalyzer customAnalyzer = (CustomAnalyzer) annotation;
+            retval.put(customAnalyzer.name(), new CustomAnalyzerDto(customAnalyzer));
         }
-        return retval;
+    }
+
+    private static void addNormalizers(Annotation annotation, Map<String, TypeDto> retval) throws IOException {
+        if (annotation instanceof CustomNormalizer) {
+            CustomNormalizer customNormalizer = (CustomNormalizer) annotation;
+            retval.put(customNormalizer.name(), new CustomNormalizerDto(customNormalizer));
+        }
     }
 
     ///////////////////////////////// MAPPINGS /////////////////////////////////
@@ -111,6 +122,8 @@ public class MappingUtils {
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
             // ------------ process fielddata -----------------
             buildFielddata(contentBuilder, fieldAnnotation.fielddata());
+            // ------------ process normalizer -----------------
+            buildNormalizer(contentBuilder, fieldAnnotation.normalizer());
             // ------------ process analyzer -----------------
             buildAnalyzer(contentBuilder, fieldAnnotation.analyzer());
             // ------------ process search_analyzer -----------------
@@ -172,6 +185,12 @@ public class MappingUtils {
         }
     }
 
+    private static void buildNormalizer(XContentBuilder contentBuilder, String normalizer) throws IOException {
+        if (!"".equals(normalizer)) {
+            contentBuilder.field("normalizer", normalizer);
+        }
+    }
+
     private static void buildAnalyzer(XContentBuilder contentBuilder, String analyzer) throws IOException {
         if (!"".equals(analyzer)) {
             contentBuilder.field("analyzer", analyzer);
@@ -196,6 +215,8 @@ public class MappingUtils {
                 buildDocValues(contentBuilder, innerField.docValues());
                 // ------------ process fielddata -----------------
                 buildFielddata(contentBuilder, innerField.fielddata());
+                // ------------ process normalizer -----------------
+                buildNormalizer(contentBuilder, innerField.normalizer());
                 // ------------ process analyzer -----------------
                 buildAnalyzer(contentBuilder, innerField.analyzer());
                 // ------------ process search_analyzer -----------------

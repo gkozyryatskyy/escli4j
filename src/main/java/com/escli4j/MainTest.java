@@ -14,11 +14,15 @@ public class MainTest {
 
     @SuppressWarnings("resource")
     public static void main(String[] args) throws IOException {
-        Client esClient = new PreBuiltTransportClient(Settings.EMPTY)
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
-        Mapping mapping = new Mapping(esClient);
-        mapping.migrate();
-        System.out.println("done");
+        try {
+            Client esClient = new PreBuiltTransportClient(Settings.EMPTY)
+                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
+            Mapping mapping = new Mapping(esClient);
+            mapping.migrate();
+            System.out.println("done");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

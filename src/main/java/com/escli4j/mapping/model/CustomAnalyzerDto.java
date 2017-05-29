@@ -5,15 +5,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @JsonInclude(Include.NON_NULL)
-public class CustomAnalyzerDto extends AnalyzerDto {
+public class CustomAnalyzerDto extends CustomNormalizerDto {
 
     private String tokenizer;
-    private String[] filter;
 
     public CustomAnalyzerDto(CustomAnalyzer annotation) {
         setType(CustomAnalyzer.type);

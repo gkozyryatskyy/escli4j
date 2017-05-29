@@ -14,6 +14,7 @@ import com.escli4j.mapping.model.SubMappingModel2;
 import com.escli4j.mapping.model.TestMappingModel1;
 import com.escli4j.mapping.model.TestMappingModel2;
 import com.escli4j.mapping.model.TestMappingModel3;
+import com.escli4j.mapping.model.TestMappingModel4;
 
 public class MappingUtilsTest {
 
@@ -50,7 +51,7 @@ public class MappingUtilsTest {
         XContentBuilder builder = MappingUtils.getMappingBuilder("test_child3", "test1", TestMappingModel3.class);
         Assert.assertEquals(readJson("TestMappingModel3.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
-    
+
     @Test
     public void getEmptySettingsBuilderTest() throws IOException {
         String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel2.class.getAnnotations()));
@@ -60,8 +61,13 @@ public class MappingUtilsTest {
     @Test
     public void getSettingsBuilderEdgeNgramTest() throws IOException {
         String builder = MappingUtils.getSettingsBuilder(Arrays.asList(TestMappingModel1.class.getAnnotations()));
-        System.out.println(builder);
         Assert.assertEquals(readJson("TestMappingModel1Settings.json").replaceAll("\\s+|\\n+|\\t+", ""), builder);
+    }
+
+    @Test
+    public void getMappingBuilderNormalizerTest() throws IOException {
+        XContentBuilder builder = MappingUtils.getMappingBuilder("test4", TestMappingModel4.class);
+        Assert.assertEquals(readJson("TestMappingModel4.json").replaceAll("\\s+|\\n+|\\t+", ""), builder.string());
     }
 
 }

@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonInclude(Include.NON_NULL)
-public class EdgeNGramFilterDto extends FilterDto {
+public class EdgeNGramFilterDto extends TypeDto {
 
     private Integer min_gram;
     private Integer max_gram;

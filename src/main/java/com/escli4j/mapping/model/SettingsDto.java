@@ -14,7 +14,7 @@ public class SettingsDto {
     private AnalysisDto analysis;
 
     public SettingsDto(AnalysisDto analysis) {
-        if (analysis.getAnalyzer() != null || analysis.getFilter() != null) {
+        if (analysis.getAnalyzer() != null || analysis.getFilter() != null || analysis.getNormalizer() != null) {
             setAnalysis(analysis);
         }
     }
