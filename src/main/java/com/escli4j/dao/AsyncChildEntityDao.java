@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -13,10 +14,10 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.xcontent.XContentType;
 
 import com.escli4j.model.EsChildEntity;
 import com.escli4j.util.EscliJsonUtils;
@@ -68,7 +69,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
      */
     public void create(T obj, RefreshPolicy refresh, Consumer<T> function, Consumer<Throwable> errorFunction) {
         IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
-                .setSource(EscliJsonUtils.writeValueAsBytes(obj));
+                .setSource(EscliJsonUtils.writeValueAsBytes(obj), XContentType.JSON);
         if (obj.getId() != null) {
             req.setOpType(OpType.CREATE);
         }
@@ -111,7 +112,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 IndexRequestBuilder req = prepareIndex(obj.getId()).setParent(obj.getParent())
-                        .setSource(EscliJsonUtils.writeValueAsBytes(obj));
+                        .setSource(EscliJsonUtils.writeValueAsBytes(obj), XContentType.JSON);
                 if (obj.getId() != null) {
                     req.setOpType(OpType.CREATE);
                 }
@@ -188,7 +189,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
     public void update(T obj, RefreshPolicy refresh, boolean docAsUpsert, boolean nullWithNoop, Consumer<T> function,
             Consumer<Throwable> errorFunction) {
         prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh).setDocAsUpsert(docAsUpsert)
-                .setFetchSource(true).setDoc(EscliJsonUtils.writeValueAsBytes(obj))
+                .setFetchSource(true).setDoc(EscliJsonUtils.writeValueAsBytes(obj), XContentType.JSON)
                 .execute(new ActionListener<UpdateResponse>() {
 
                     @Override
@@ -242,7 +243,7 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
             BulkRequestBuilder bulk = prepareBulk().setRefreshPolicy(refresh);
             for (T obj : objs) {
                 bulk.add(prepareUpdate(obj.getId()).setParent(obj.getParent()).setDocAsUpsert(docAsUpsert)
-                        .setFetchSource(true).setDoc(EscliJsonUtils.writeValueAsBytes(obj)));
+                        .setFetchSource(true).setDoc(EscliJsonUtils.writeValueAsBytes(obj), XContentType.JSON));
             }
             bulk.execute(new ActionListener<BulkResponse>() {
 

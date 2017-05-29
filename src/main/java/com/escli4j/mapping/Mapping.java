@@ -9,6 +9,7 @@ import java.util.Set;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +108,7 @@ public class Mapping {
         if (execute) {
             String settings = MappingUtils.getSettingsBuilder(index.getAnnotations());
             if (settings != null) {
-                builder.setSettings(settings);
+                builder.setSettings(settings, XContentType.JSON);
             }
         }
         // not send get request if execute == false
@@ -129,7 +130,7 @@ public class Mapping {
         try {
             client.admin().indices().prepareClose(index.getName()).get();
             if (settings != null) {
-                result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings).get()
+                result &= client.admin().indices().prepareUpdateSettings(indexName).setSettings(settings, XContentType.JSON).get()
                         .isAcknowledged();
             }
             for (Map.Entry<String, Class<? extends EsEntity>> entry : index.getTypes().entrySet()) {
@@ -156,7 +157,7 @@ public class Mapping {
             client.admin().indices().prepareClose(index.getName()).get();
             try {
                 execute = true;
-                result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings).get()
+                result &= client.admin().indices().prepareUpdateSettings(index.getName()).setSettings(settings, XContentType.JSON).get()
                         .isAcknowledged();
             } catch (IllegalArgumentException e) {
                 log.warn("Some of the settings was not updated. ", e);

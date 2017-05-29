@@ -5,7 +5,7 @@
 	<groupId>com.escli4j</groupId>
 	<artifactId>escli4j</artifactId>
 	<!-- x.y.z where z is escli4j version and x.y is elasticsearch client version -->	
-	<version>5.2.7</version>
+	<version>5.4.7</version>
 	<name>anyclip</name>
 
 	<description>
@@ -27,13 +27,13 @@
 		<compiler-plugin.version>3.5.1</compiler-plugin.version>
 		<eclipse-plugin.version>2.10</eclipse-plugin.version>
 		
-		<logback.version>1.2.1</logback.version>
+		<logback.version>1.2.3</logback.version>
         <log4j.version>2.7</log4j.version>
         <junit.version>4.12</junit.version>
         <jackson.version>2.8.6</jackson.version>
         <reflections.version>0.9.10</reflections.version>
-        <lombok.version>1.16.12</lombok.version>
-        <es.version>5.2.1</es.version>
+        <lombok.version>1.16.16</lombok.version>
+        <es.version>5.4.0</es.version>
         
 	</properties>
 
