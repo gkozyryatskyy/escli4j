@@ -134,6 +134,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                 }
 
             });
+        } else {
+            function.accept(objs);
         }
     }
 
@@ -268,6 +270,8 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
                 }
 
             });
+        } else {
+            function.accept(objs);
         }
     }
 

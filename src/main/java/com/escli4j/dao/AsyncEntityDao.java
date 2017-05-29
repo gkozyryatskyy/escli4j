@@ -174,6 +174,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
             });
+        } else {
+            function.accept(objs);
         }
     }
 
@@ -330,6 +332,8 @@ public class AsyncEntityDao<T extends EsEntity> extends EntityDao<T> {
                 }
 
             });
+        } else {
+            function.accept(objs);
         }
     }
 

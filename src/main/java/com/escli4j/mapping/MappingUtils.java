@@ -109,6 +109,8 @@ public class MappingUtils {
             buildType(contentBuilder, field, fieldType, fieldAnnotation.dataType(), field.getName());
             // ------------ process docValues -----------------
             buildDocValues(contentBuilder, fieldAnnotation.docValues());
+            // ------------ process fielddata -----------------
+            buildFielddata(contentBuilder, fieldAnnotation.fielddata());
             // ------------ process analyzer -----------------
             buildAnalyzer(contentBuilder, fieldAnnotation.analyzer());
             // ------------ process search_analyzer -----------------
@@ -164,6 +166,12 @@ public class MappingUtils {
         }
     }
 
+    private static void buildFielddata(XContentBuilder contentBuilder, boolean fielddata) throws IOException {
+        if (fielddata) {
+            contentBuilder.field("fielddata", true);
+        }
+    }
+
     private static void buildAnalyzer(XContentBuilder contentBuilder, String analyzer) throws IOException {
         if (!"".equals(analyzer)) {
             contentBuilder.field("analyzer", analyzer);
@@ -186,6 +194,8 @@ public class MappingUtils {
                 buildType(contentBuilder, field, javaType, innerField.dataType(), innerField.name());
                 // ------------ process doc_values -----------------
                 buildDocValues(contentBuilder, innerField.docValues());
+                // ------------ process fielddata -----------------
+                buildFielddata(contentBuilder, innerField.fielddata());
                 // ------------ process analyzer -----------------
                 buildAnalyzer(contentBuilder, innerField.analyzer());
                 // ------------ process search_analyzer -----------------

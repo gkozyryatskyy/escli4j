@@ -28,6 +28,13 @@ public @interface InnerField{
     boolean docValues() default true;
 
     /**
+     * fielddata parameter support
+     * https://www.elastic.co/guide/en/elasticsearch/reference/current/fielddata.html#fielddata
+     * @return fielddata
+     */
+    boolean fielddata() default false;
+
+    /**
      * Analyzer parameter support https://www.elastic.co/guide/en/elasticsearch/reference/current/analyzer.html
      * @return analyzer
      */
