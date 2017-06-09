@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +109,7 @@ public class MappingUtils {
             if (fieldType.getComponentType() != null) {
                 // unwrap objects wrapped in arrays
                 fieldType = fieldType.getComponentType();
-            } else if (List.class.equals(fieldType)) {
+            } else if (Collection.class.isAssignableFrom(fieldType)) {
                 // unwrap objects wrapped in list
                 fieldType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
             }

@@ -10,6 +10,7 @@ import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 
 public class MappingReflectUtils {
+    
     public static Set<Class<?>> getAnnotatedClasses(String modelPackage, Class<? extends Annotation> annotation) {
         Reflections reflections;
         if (modelPackage != null) {

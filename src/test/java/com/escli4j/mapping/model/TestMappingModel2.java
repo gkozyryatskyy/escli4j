@@ -1,6 +1,7 @@
 package com.escli4j.mapping.model;
 
 import java.util.List;
+import java.util.Set;
 
 import com.escli4j.annotations.Field;
 import com.escli4j.annotations.InnerField;
@@ -19,10 +20,12 @@ public class TestMappingModel2 extends EsEntity {
     public Inner[] field2;
     @Field(dataType = DataType.NESTED)
     public List<Inner> field3;
+    @Field(dataType = DataType.NESTED)
+    public Set<Inner> field4;
 
     public static class Inner {
         @Field(dataType = DataType.KEYWORD, fields = { @InnerField(dataType = DataType.TEXT, name = "indexed") })
-        public Inner field4;
+        public Inner field5;
     }
 
 }
