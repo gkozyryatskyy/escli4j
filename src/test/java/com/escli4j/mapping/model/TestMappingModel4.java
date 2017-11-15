@@ -11,8 +11,6 @@ import com.escli4j.model.EsEntity;
 @Type(index = "test4", type = "test4")
 public class TestMappingModel4 extends EsEntity {
 
-    private static final long serialVersionUID = -8916256083521146850L;
-
     @Field(dataType = DataType.TEXT,
             fields = { @InnerField(name = "keyword", dataType = DataType.KEYWORD, normalizer = "test_custom_normalizer") })
     public String field1;

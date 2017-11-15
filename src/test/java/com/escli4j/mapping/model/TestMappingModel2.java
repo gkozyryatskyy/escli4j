@@ -11,8 +11,6 @@ import com.escli4j.model.EsEntity;
 
 @Type(index = "test2", type = "test2")
 public class TestMappingModel2 extends EsEntity {
-
-    private static final long serialVersionUID = 320566017090586743L;
     
     @Field(dataType = DataType.TEXT)
     public String field1;

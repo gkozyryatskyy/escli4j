@@ -6,8 +6,6 @@ import com.escli4j.mapping.DataType;
 
 @Type(index = "test_sub2", type = "test_sub2")
 public class SubMappingModel2 extends ParrentMappingModel2 {
-
-    private static final long serialVersionUID = -7226475228880644698L;
     
     @Field(dataType = DataType.TEXT)
     public String subField1;

@@ -1,12 +1,8 @@
 package com.escli4j.model;
 
-import java.io.Serializable;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class EsEntity implements Serializable {
-
-    private static final long serialVersionUID = 3157546209065026044L;
+public class EsEntity {
 
     @JsonIgnore
     protected String id;

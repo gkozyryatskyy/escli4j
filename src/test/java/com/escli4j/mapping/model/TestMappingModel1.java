@@ -18,8 +18,6 @@ import com.escli4j.model.EsEntity;
 @CustomAnalyzer(name = "lowercase", tokenizer = "keyword", filter = { "lowercase" })
 public class TestMappingModel1 extends EsEntity {
 
-    private static final long serialVersionUID = 6871259440297026084L;
-
     @Field(dataType = DataType.TEXT, analyzer = "standard", search_analyzer = "standard")
     public String field1;
     @Field(dataType = DataType.KEYWORD)

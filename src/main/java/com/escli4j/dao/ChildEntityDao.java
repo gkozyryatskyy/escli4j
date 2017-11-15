@@ -15,11 +15,14 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.get.GetResult;
 
 import com.escli4j.model.EsChildEntity;
 import com.escli4j.util.EscliJsonUtils;
 
 public class ChildEntityDao<T extends EsChildEntity> extends Dao {
+
+    private static final String _parent = "_parent";
 
     protected final Class<T> clazz;
 
@@ -28,10 +31,17 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         this.clazz = clazz;
     }
 
-    protected T newObject(byte[] source, String id, String parentId) {
-        T retval = EscliJsonUtils.read(source, clazz);
-        retval.setId(id);
-        retval.setParent(parentId);
+    protected T newObject(GetResponse response) {
+        T retval = EscliJsonUtils.read(response.getSourceAsBytes(), clazz);
+        retval.setId(response.getId());
+        retval.setParent(response.getField(_parent).getValue().toString());
+        return retval;
+    }
+
+    protected T newObject(GetResult result) {
+        T retval = EscliJsonUtils.read(result.source(), clazz);
+        retval.setId(result.getId());
+        retval.setParent(result.field(_parent).getValue().toString());
         return retval;
     }
 
@@ -114,7 +124,7 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
     public T get(String id, String parentId) {
         GetResponse resp = prepareGet(id).setParent(parentId).get();
         if (resp.isExists()) {
-            return newObject(resp.getSourceAsBytes(), id, parentId);
+            return newObject(resp);
         } else {
             return null;
         }
@@ -143,12 +153,12 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
                 .setDoc(EscliJsonUtils.writeValueAsBytes(obj), XContentType.JSON).get();
         if (nullWithNoop) {
             if (response.getResult() != Result.NOOP) {
-                return newObject(response.getGetResult().source(), obj.getId(), obj.getParent());
+                return newObject(response.getGetResult());
             } else {
                 return null;
             }
         } else {
-            return newObject(response.getGetResult().source(), obj.getId(), obj.getParent());
+            return newObject(response.getGetResult());
         }
     }
 
@@ -179,14 +189,13 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                UpdateResponse updateResponce = item.getResponse();
-                T obj = objs.get(item.getItemId());
+                UpdateResponse responce = item.getResponse();
                 if (nullWithNoop) {
-                    if (updateResponce.getResult() != Result.NOOP) {
-                        retval.add(newObject(updateResponce.getGetResult().source(), obj.getId(), obj.getParent()));
+                    if (responce.getResult() != Result.NOOP) {
+                        retval.add(newObject(responce.getGetResult()));
                     }
                 } else {
-                    retval.add(newObject(updateResponce.getGetResult().source(), obj.getId(), obj.getParent()));
+                    retval.add(newObject(responce.getGetResult()));
                 }
             }
         }
