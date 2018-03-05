@@ -194,14 +194,10 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
 
                     @Override
                     public void onResponse(UpdateResponse response) {
-                        if (nullWithNoop) {
-                            if (response.getResult() != Result.NOOP) {
-                                function.accept(newObject(response.getGetResult()));
-                            } else {
-                                function.accept(null);
-                            }
+                        if (nullWithNoop && Result.NOOP == response.getResult()) {
+                            function.accept(null);
                         } else {
-                            function.accept(newObject(response.getGetResult()));
+                            function.accept(newObject(response.getGetResult(), obj.getParent()));
                         }
                     }
 
@@ -247,16 +243,15 @@ public class AsyncChildEntityDao<T extends EsChildEntity> extends ChildEntityDao
             bulk.execute(new ActionListener<BulkResponse>() {
 
                 @Override
-                public void onResponse(BulkResponse response) {
+                public void onResponse(BulkResponse resp) {
                     ArrayList<T> retval = new ArrayList<>();
-                    for (BulkItemResponse item : response.getItems()) {
-                        UpdateResponse responce = item.getResponse();
-                        if (nullWithNoop) {
-                            if (responce.getResult() != Result.NOOP) {
-                                retval.add(newObject(responce.getGetResult()));
-                            }
+                    for (BulkItemResponse item : resp.getItems()) {
+                        T obj = objs.get(item.getItemId());
+                        UpdateResponse response = item.getResponse();
+                        if (nullWithNoop && Result.NOOP == response.getResult()) {
+                            // do nothing
                         } else {
-                            retval.add(newObject(responce.getGetResult()));
+                            retval.add(newObject(response.getGetResult(), obj.getParent()));
                         }
                     }
                     function.accept(retval);

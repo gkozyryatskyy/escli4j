@@ -38,10 +38,12 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         return retval;
     }
 
-    protected T newObject(GetResult result) {
+    protected T newObject(GetResult result, String parentId) {
         T retval = EscliJsonUtils.read(result.source(), clazz);
         retval.setId(result.getId());
-        retval.setParent(result.field(_parent).getValue().toString());
+        // There is no parentId (_parent) field in update api response
+        // https://discuss.elastic.co/t/update-api-missing-parent-in-response/122555
+        retval.setParent(parentId);
         return retval;
     }
 
@@ -151,14 +153,10 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
         UpdateResponse response = prepareUpdate(obj.getId()).setParent(obj.getParent()).setRefreshPolicy(refresh)
                 .setDocAsUpsert(docAsUpsert).setFetchSource(true)
                 .setDoc(EscliJsonUtils.writeValueAsBytes(obj), XContentType.JSON).get();
-        if (nullWithNoop) {
-            if (response.getResult() != Result.NOOP) {
-                return newObject(response.getGetResult());
-            } else {
-                return null;
-            }
+        if (nullWithNoop && Result.NOOP == response.getResult()) {
+            return null;
         } else {
-            return newObject(response.getGetResult());
+            return newObject(response.getGetResult(), obj.getParent());
         }
     }
 
@@ -189,13 +187,12 @@ public class ChildEntityDao<T extends EsChildEntity> extends Dao {
             }
             BulkResponse resp = bulk.get();
             for (BulkItemResponse item : resp.getItems()) {
-                UpdateResponse responce = item.getResponse();
-                if (nullWithNoop) {
-                    if (responce.getResult() != Result.NOOP) {
-                        retval.add(newObject(responce.getGetResult()));
-                    }
+                T obj = objs.get(item.getItemId());
+                UpdateResponse response = item.getResponse();
+                if (nullWithNoop && Result.NOOP == response.getResult()) {
+                    // do nothing
                 } else {
-                    retval.add(newObject(responce.getGetResult()));
+                    retval.add(newObject(response.getGetResult(), obj.getParent()));
                 }
             }
         }
